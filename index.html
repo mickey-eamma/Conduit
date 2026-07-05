@@ -126,6 +126,73 @@
   .w-leg-row .sw{width:18px;height:3.5px;border-radius:2px;flex:0 0 18px}
   .w-leg-row b{margin-left:auto;padding-left:14px;color:var(--ink-dim);font-weight:600;font-variant-numeric:tabular-nums}
   .w-leg-empty{font-size:12px;color:var(--ink-faint)}
+
+  /* ---- Builder side panel tabs ---- */
+  .bs-tabs{display:flex;gap:3px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:3px;margin-bottom:14px}
+  .bst{flex:1;font-family:var(--ui);font-size:13px;font-weight:600;color:var(--ink-dim);background:transparent;border:none;border-radius:7px;padding:7px 0;cursor:pointer;transition:.13s}
+  .bst:hover{color:var(--ink)}
+  .bst.active{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+  .bs-foot{margin-top:18px;padding-top:14px;border-top:1px solid var(--line-soft)}
+  .bs-foot h3{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-faint);margin:0 0 9px}
+  .bm-select{width:100%;font-family:var(--ui);font-size:13px;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 8px;cursor:pointer}
+  .bm-select:focus{outline:none;border-color:var(--accent)}
+
+  /* ---- Layer list (Map Viewer style) ---- */
+  .lyr{border:1px solid var(--line);border-radius:11px;background:#fff;margin-bottom:8px;overflow:hidden}
+  .lyr.off .lnm,.lyr.off .lct{opacity:.45}
+  .lyr-head{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer;user-select:none}
+  .lyr-head:hover{background:var(--panel-2)}
+  .lyr .eye{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:26px;height:26px;background:none;border:none;border-radius:7px;cursor:pointer;color:var(--ink-dim)}
+  .lyr .eye:hover{background:var(--line-soft);color:var(--ink)}
+  .lyr .eye svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .lyr .ldot{width:11px;height:11px;border-radius:3px;flex:0 0 11px}
+  .lyr .lnm{flex:1;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lyr .lct{font-size:11.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+  .lyr .chev{background:none;border:none;color:var(--ink-faint);cursor:pointer;padding:2px;display:flex}
+  .lyr .chev svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:.15s}
+  .lyr.open .chev svg{transform:rotate(180deg)}
+  .lyr-body{display:none;padding:4px 12px 12px;border-top:1px solid var(--line-soft);background:var(--panel-2)}
+  .lyr.open .lyr-body{display:block}
+  .lc-row{display:flex;align-items:center;gap:9px;padding:7px 0}
+  .lc-row label{flex:1;font-size:12.5px;font-weight:600;color:var(--ink-dim)}
+  .lc-row input[type=color]{width:34px;height:24px;border:1px solid var(--line);border-radius:6px;padding:1px;background:#fff;cursor:pointer}
+  .lc-row input[type=range]{width:78px;accent-color:#1f2430}
+  .lc-row .lcv{font-size:11px;color:var(--ink-faint);width:30px;text-align:right;font-variant-numeric:tabular-nums}
+  .lc-row input[type=checkbox]{width:15px;height:15px;accent-color:#1f2430;cursor:pointer}
+  .pf-head{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-faint);margin:8px 0 4px}
+  .pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+  .pf-grid label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--ink);padding:3px 0;cursor:pointer}
+  .pf-grid input{width:14px;height:14px;accent-color:#1f2430;cursor:pointer}
+  .pf-grid.dis{opacity:.4;pointer-events:none}
+
+  /* ---- Widget palette (Experience Builder style) ---- */
+  #widgetPalette{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pw{display:flex;flex-direction:column;align-items:center;gap:7px;padding:13px 8px 11px;background:#fff;border:1px solid var(--line);border-radius:11px;cursor:grab;user-select:none;touch-action:none;transition:.15s;text-align:center}
+  .pw:hover{border-color:#1f2430;box-shadow:var(--shadow-sm)}
+  .pw:active{cursor:grabbing}
+  .pw svg{width:22px;height:22px;stroke:var(--ink);stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .pw .pwn{font-size:12px;font-weight:700;color:var(--ink)}
+  .pw .pwd{font-size:10.5px;color:var(--ink-faint);line-height:1.3}
+  .pw.placed{opacity:.45;pointer-events:auto}
+  .drag-ghost{position:fixed;z-index:5000;transform:translate(-50%,-120%);background:#1f2430;color:#fff;font-family:var(--ui);font-size:12.5px;font-weight:700;padding:7px 13px;border-radius:9px;box-shadow:0 12px 28px -8px rgba(0,0,0,.5);pointer-events:none;opacity:.55}
+  .drag-ghost.ok{opacity:1}
+
+  /* ---- New widget types ---- */
+  .w-scale{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow-sm);padding:7px 11px 8px}
+  .ws-bar{height:5px;background:#2c3038;border-radius:2px;position:relative;min-width:24px}
+  .ws-bar::before,.ws-bar::after{content:'';position:absolute;top:-4px;bottom:-4px;width:2px;background:#2c3038}
+  .ws-bar::before{left:0}
+  .ws-bar::after{right:0}
+  .ws-lab{font-size:11px;font-weight:700;color:var(--ink);margin-top:6px;text-align:center;font-variant-numeric:tabular-nums}
+  .w-north{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:50%;box-shadow:var(--shadow-sm);width:46px;height:46px;display:flex;align-items:center;justify-content:center}
+  .w-north svg{width:32px;height:32px}
+  .w-layers{background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow-sm);padding:11px 14px;min-width:180px}
+  .w-lyrrow{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink);padding:3px 0;cursor:pointer}
+  .w-lyrrow input{width:14px;height:14px;accent-color:#1f2430;cursor:pointer}
+  .w-lyrrow .dot{width:10px;height:10px;border-radius:3px}
+  .w-lyrrow b{margin-left:auto;padding-left:14px;color:var(--ink-dim);font-weight:600;font-variant-numeric:tabular-nums}
+  .leaflet-popup-content-wrapper{border-radius:11px;box-shadow:0 10px 28px -10px rgba(40,44,52,.4);font-family:var(--ui)}
+  .leaflet-popup-content .pp-code{font-size:11px;font-weight:700;letter-spacing:.4px;color:var(--ink-faint)}
   .btn{font-family:var(--ui);font-size:13px;font-weight:600;color:var(--ink-dim);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 14px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
   .btn:hover{color:var(--ink);border-color:#d4cfc3;background:var(--panel-2)}
   .btn.primary{color:#fff;background:var(--accent);border-color:var(--accent)}
@@ -457,39 +524,39 @@
 
   <div class="builder" id="builder">
     <aside class="b-side">
-      <section>
-        <h3>Symbology</h3>
-        <div id="symRows"></div>
-        <div class="b-field"><label>Basemap</label>
-          <select id="bmSelect">
+      <div class="bs-tabs">
+        <button class="bst active" data-bstab="layers">Layers</button>
+        <button class="bst" data-bstab="widgets">Widgets</button>
+      </div>
+      <div class="bs-page" id="bsLayers">
+        <div id="layerList"></div>
+        <section class="bs-foot">
+          <h3>ArcGIS layers</h3>
+          <div class="ags-add">
+            <input id="agsUrl" type="text" placeholder="Paste ArcGIS REST URL…" autocomplete="off" spellcheck="false">
+            <button class="btn" id="agsAdd">Add</button>
+          </div>
+          <div class="ags-status" id="agsStatus"></div>
+          <div class="ags-list" id="agsList"></div>
+          <p class="note">Add a Feature Layer, Feature/Map Service, or cached MapServer by URL &mdash; e.g. <code>&hellip;/FeatureServer/0</code>. Layers draw on the canvas and travel with the deployed map.</p>
+        </section>
+        <section class="bs-foot">
+          <h3>Basemap</h3>
+          <select id="bmSelect" class="bm-select">
             <option value="gray" selected>Light gray</option>
             <option value="streets">Streets</option>
             <option value="imagery">Imagery</option>
           </select>
-        </div>
-      </section>
-      <section>
-        <h3>ArcGIS layers</h3>
-        <div class="ags-add">
-          <input id="agsUrl" type="text" placeholder="Paste ArcGIS REST URL…" autocomplete="off" spellcheck="false">
-          <button class="btn" id="agsAdd">Add</button>
-        </div>
-        <div class="ags-status" id="agsStatus"></div>
-        <div class="ags-list" id="agsList"></div>
-        <p class="note">Add a Feature Layer, Feature/Map Service, or cached MapServer by URL &mdash; e.g. <code>&hellip;/FeatureServer/0</code>. Layers draw on the canvas and travel with the deployed map.</p>
-      </section>
-      <section>
-        <h3>Widgets</h3>
-        <div class="wbtns">
-          <button class="wbtn" id="addTextW">&#65291; Text box</button>
-          <button class="wbtn" id="addLegendW">&#65291; Legend</button>
-        </div>
-        <p class="note">Widgets drop onto the canvas. Hover one and drag it by its handle; click a text box to edit it.</p>
-      </section>
-      <section>
-        <h3>Publish</h3>
-        <p class="note">Deploy captures exactly what you see on the canvas &mdash; current framing, symbology, and widgets &mdash; as a read-only asset map in a new tab.</p>
-      </section>
+        </section>
+      </div>
+      <div class="bs-page" id="bsWidgets" hidden>
+        <p class="note" style="margin:0 0 12px">Drag a widget onto the canvas to place it, or click one to drop it in the corner. Hover a placed widget and move it by its handle.</p>
+        <div id="widgetPalette"></div>
+        <section class="bs-foot">
+          <h3>Publish</h3>
+          <p class="note">Deploy captures the canvas exactly &mdash; framing, layer symbology, pop-up settings, and widgets &mdash; as a read-only map app in a new tab.</p>
+        </section>
+      </div>
     </aside>
     <main class="b-canvas">
       <div id="bmap"></div>
@@ -1586,9 +1653,27 @@ const BASEMAPS={
   imagery:{layers:[
     ['https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',maxZoom:19}]]}
 };
+function defaultLayerCfg(id){
+  return { visible:true, color:UTILS[id].color, weight:3.5, opacity:1,
+    popup:{ enabled:true, fields:{ code:true, type:true, status:true, length:true, fiber:true, links:true } } };
+}
 const builder={ map:null, groups:{}, baseLayers:[], sig:null, widgets:[], nextW:1, basemap:'gray',
-  arcgisLayers:[], nextA:1,
-  sym:{ telecom:{color:'#7c4ddb',weight:3.5}, water:{color:'#0891b2',weight:3.5}, electric:{color:'#e08700',weight:3.5}, oilgas:{color:'#e11d48',weight:3.5} } };
+  arcgisLayers:[], nextA:1, expanded:{},
+  layers:{ telecom:defaultLayerCfg('telecom'), water:defaultLayerCfg('water'),
+           electric:defaultLayerCfg('electric'), oilgas:defaultLayerCfg('oilgas') } };
+
+const WIDGET_DEFS={
+  text:     {label:'Text',       desc:'Free-form annotation', single:false,
+             icon:'<path d="M5 6h14M12 6v13"/>'},
+  legend:   {label:'Legend',     desc:'Auto layer key',       single:true,
+             icon:'<circle cx="6" cy="7" r="1.7"/><path d="M11 7h8"/><circle cx="6" cy="12" r="1.7"/><path d="M11 12h8"/><circle cx="6" cy="17" r="1.7"/><path d="M11 17h8"/>'},
+  layerlist:{label:'Layer list', desc:'Toggle layers in the app', single:true,
+             icon:'<path d="M12 3 21 8 12 13 3 8Z"/><path d="M3 13l9 5 9-5"/>'},
+  scalebar: {label:'Scale bar',  desc:'Live map scale',       single:true,
+             icon:'<path d="M4 9v7M20 9v7M4 12.5h16M9 10.5v4M14 10.5v4"/>'},
+  northarrow:{label:'North arrow',desc:'Orientation marker',  single:true,
+             icon:'<circle cx="12" cy="12" r="8.5"/><path d="M12 6.5 15 16l-3-2.2L9 16Z"/>'}
+};
 
 function setMainView(v){
   mainView=v;
@@ -1607,10 +1692,15 @@ function setMainView(v){
 function initBuilder(){
   builder.map=L.map('bmap',{zoomControl:true}).setView([32.74,-97.05],12);
   applyBuilderBasemap();
-  renderSymRows();
+  builder.map.on('zoomend moveend',updateScaleWidgets);
+  document.querySelectorAll('.bst').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.bst').forEach(x=>x.classList.toggle('active',x===b));
+    document.getElementById('bsLayers').hidden=b.dataset.bstab!=='layers';
+    document.getElementById('bsWidgets').hidden=b.dataset.bstab!=='widgets';
+  });
   document.getElementById('bmSelect').onchange=e=>{ builder.basemap=e.target.value; applyBuilderBasemap(); };
-  document.getElementById('addTextW').onclick=()=>addWidget('text');
-  document.getElementById('addLegendW').onclick=()=>addWidget('legend');
+  renderWidgetPalette();
+  renderLayerList();
   document.getElementById('agsAdd').onclick=addArcgisLayer;
   document.getElementById('agsUrl').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); addArcgisLayer(); } });
 }
@@ -1757,17 +1847,50 @@ function removeAgsLayer(rec){
   renderAgsList();
 }
 
-function renderSymRows(){
-  const host=document.getElementById('symRows'); host.innerHTML='';
+/* ---------- layers tab: Map Viewer style layer list ---------- */
+const EYE_ON='<svg viewBox="0 0 24 24"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.7"/></svg>';
+const EYE_OFF='<svg viewBox="0 0 24 24"><path d="M2 12s3.5-6.5 10-6.5c1.9 0 3.6.55 5 1.35M22 12s-3.5 6.5-10 6.5c-1.9 0-3.6-.55-5-1.35"/><path d="M4 20 20 4"/></svg>';
+const CHEV='<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
+const POPUP_FIELDS=[['code','Asset code'],['type','Type & network'],['status','Status'],['length','Length'],['fiber','Fiber details'],['links','Connections']];
+function renderLayerList(){
+  const host=document.getElementById('layerList'); if(!host) return;
+  host.innerHTML='';
   ORDER.forEach(id=>{
-    const s=builder.sym[id];
-    const row=document.createElement('div'); row.className='sym-row';
-    row.innerHTML=`<span class="nm">${UTILS[id].label}</span><input type="color" value="${s.color}" title="Network color"><input type="range" min="2" max="7" step="0.5" value="${s.weight}" title="Line weight"><span class="wv">${s.weight}</span>`;
-    const inputs=row.querySelectorAll('input'); const wv=row.querySelector('.wv');
-    inputs[0].oninput=()=>{ s.color=inputs[0].value; syncBuilder(); };
-    inputs[1].oninput=()=>{ s.weight=parseFloat(inputs[1].value); wv.textContent=s.weight; syncBuilder(); };
-    host.appendChild(row);
+    const cfg=builder.layers[id], n=counts(id).total;
+    const card=document.createElement('div');
+    card.className='lyr'+(builder.expanded[id]?' open':'')+(cfg.visible?'':' off');
+    const head=document.createElement('div'); head.className='lyr-head';
+    head.innerHTML=`<button class="eye" title="${cfg.visible?'Hide layer':'Show layer'}">${cfg.visible?EYE_ON:EYE_OFF}</button>
+      <span class="ldot" style="background:${cfg.color}"></span>
+      <span class="lnm">${UTILS[id].label}</span><span class="lct">${n}</span>
+      <button class="chev" title="Layer properties">${CHEV}</button>`;
+    head.querySelector('.eye').onclick=e=>{ e.stopPropagation(); setLayerVisible(id,!cfg.visible); };
+    head.onclick=()=>{ builder.expanded[id]=!builder.expanded[id]; card.classList.toggle('open',builder.expanded[id]); };
+    const body=document.createElement('div'); body.className='lyr-body';
+    body.onclick=e=>e.stopPropagation();
+    body.innerHTML=`
+      <div class="lc-row"><label>Color</label><input type="color" class="li-col" value="${cfg.color}"></div>
+      <div class="lc-row"><label>Line weight</label><input type="range" class="li-wgt" min="2" max="7" step="0.5" value="${cfg.weight}"><span class="lcv">${cfg.weight}</span></div>
+      <div class="lc-row"><label>Transparency</label><input type="range" class="li-opa" min="0" max="80" step="5" value="${Math.round((1-cfg.opacity)*100)}"><span class="lcv">${Math.round((1-cfg.opacity)*100)}%</span></div>
+      <div class="lc-row"><label>Enable pop-ups</label><input type="checkbox" class="li-pop" ${cfg.popup.enabled?'checked':''}></div>
+      <div class="pf-head">Pop-up fields</div>
+      <div class="pf-grid ${cfg.popup.enabled?'':'dis'}">${POPUP_FIELDS.filter(f=>f[0]!=='fiber'||id==='telecom').map(f=>
+        `<label><input type="checkbox" data-pf="${f[0]}" ${cfg.popup.fields[f[0]]!==false?'checked':''}>${f[1]}</label>`).join('')}</div>`;
+    const col=body.querySelector('.li-col'), wgt=body.querySelector('.li-wgt'), opa=body.querySelector('.li-opa'), pop=body.querySelector('.li-pop');
+    const wv=wgt.nextElementSibling, ov=opa.nextElementSibling, grid=body.querySelector('.pf-grid');
+    col.oninput=()=>{ cfg.color=col.value; head.querySelector('.ldot').style.background=cfg.color; syncBuilder(); };
+    wgt.oninput=()=>{ cfg.weight=parseFloat(wgt.value); wv.textContent=cfg.weight; syncBuilder(); };
+    opa.oninput=()=>{ cfg.opacity=1-parseInt(opa.value,10)/100; ov.textContent=opa.value+'%'; syncBuilder(); };
+    pop.onchange=()=>{ cfg.popup.enabled=pop.checked; grid.classList.toggle('dis',!pop.checked); syncBuilder(); };
+    grid.querySelectorAll('input[data-pf]').forEach(cb=>cb.onchange=()=>{ cfg.popup.fields[cb.dataset.pf]=cb.checked; syncBuilder(); });
+    card.appendChild(head); card.appendChild(body); host.appendChild(card);
   });
+}
+function setLayerVisible(id,vis){
+  builder.layers[id].visible=vis;
+  const g=builder.groups[id];
+  if(g){ if(vis) g.addTo(builder.map); else builder.map.removeLayer(g); }
+  renderLayerList(); refreshLegendWidgets(); refreshLayerListWidgets();
 }
 function builderRisers(group){
   const lines=state.data.telecom.features.filter(f=>f.type==='line');
@@ -1782,31 +1905,57 @@ function builderRisers(group){
     L.marker(p,{icon}).bindTooltip('Riser · aerial ⇄ underground',{className:'feat-tip',direction:'top',offset:[0,-9]}).addTo(group);
   });
 }
+function builderPopupHTML(id,f){
+  const cfg=builder.layers[id]; if(!cfg.popup.enabled) return null;
+  const u=UTILS[id], Fd=cfg.popup.fields;
+  let h='';
+  if(Fd.code!==false) h+=`<div class="pp-code">${escapeHtml(f.code)}</div>`;
+  h+=`<div class="pp-name">${escapeHtml(f.props.name||u.terms[f.type])}</div>`;
+  const rows=[];
+  if(Fd.type!==false){ rows.push(['Type',u.terms[f.type]]); rows.push(['Network',u.label]); }
+  if(Fd.status!==false) rows.push(['Status',f.props.status||'Active']);
+  if(f.type==='line'&&Fd.length!==false) rows.push(['Length',fmtLen(lineLength(f))]);
+  if(id==='telecom'&&f.type==='line'&&Fd.fiber!==false){ rows.push(['Fibers',effectiveFiberCount(f)||null]); rows.push(['Placement',f.props.placement||'Aerial']); }
+  if(f.type==='join'&&Fd.links!==false){
+    if(id==='telecom'){
+      rows.push(['Parent line',f.props.parentLine||null]);
+      const br=(f.props.branches||[]).filter(b=>b.line); if(br.length) rows.push(['Branches',br.length]);
+      const sp=(f.props.splices||[]); if(sp.length) rows.push(['Fiber splices',sp.length]);
+    } else { rows.push(['From line',f.props.fromLine||null]); rows.push(['To line',f.props.toLine||null]); }
+  }
+  rows.forEach(r=>{ if(r[1]==null||r[1]==='') return; h+=`<div class="pr"><span>${r[0]}</span><b>${escapeHtml(String(r[1]))}</b></div>`; });
+  return h;
+}
 function syncBuilder(){
   if(!builder.map) return;
   ORDER.forEach(id=>{
     if(builder.groups[id]) builder.map.removeLayer(builder.groups[id]);
-    const g=L.layerGroup().addTo(builder.map); builder.groups[id]=g;
-    const s=builder.sym[id];
+    const g=L.layerGroup(); builder.groups[id]=g;
+    const cfg=builder.layers[id];
+    if(cfg.visible) g.addTo(builder.map);
     state.data[id].features.forEach(f=>{
       const st=f.props.status||'Active';
+      const pop=builderPopupHTML(id,f);
       if(f.type==='line'){
         const dash=(id==='telecom')?(f.props.placement==='Underground'?'11 7':(st==='Construction'?'2 6':null)):(STATUS_DASH[st]||null);
-        L.polyline(f.latlngs,{color:'#ffffff',weight:s.weight+3.5,opacity:.9,interactive:false}).addTo(g);
-        L.polyline(f.latlngs,{color:s.color,weight:s.weight,opacity:STATUS_OPACITY[st]??.95,dashArray:dash}).addTo(g)
-          .bindTooltip(tipText(f),{className:'feat-tip',direction:'top',opacity:1});
+        L.polyline(f.latlngs,{color:'#ffffff',weight:cfg.weight+3.5,opacity:.9*cfg.opacity,interactive:false}).addTo(g);
+        const main=L.polyline(f.latlngs,{color:cfg.color,weight:cfg.weight,opacity:(STATUS_OPACITY[st]??.95)*cfg.opacity,dashArray:dash}).addTo(g);
+        main.bindTooltip(tipText(f),{className:'feat-tip',direction:'top',opacity:1});
+        if(pop) main.bindPopup(pop);
       }else{
         const cls=f.type==='source'?'pt-source':f.type==='join'?'pt-join':'pt-delivery';
-        const extra=((st==='Planned'||st==='Construction')?'border-style:dashed;':'')+(st==='Abandoned'?'opacity:.5;':'');
-        const icon=L.divIcon({className:'pt-wrap',html:`<div class="pt ${cls}" style="--c:${s.color};${extra}"></div>`,iconSize:[18,18],iconAnchor:[9,9]});
-        L.marker(f.latlng,{icon}).bindTooltip(tipText(f),{className:'feat-tip',direction:'top',offset:[0,-6],opacity:1}).addTo(g);
+        const baseOp=(st==='Abandoned'?.5:1)*cfg.opacity;
+        const extra=((st==='Planned'||st==='Construction')?'border-style:dashed;':'')+`opacity:${baseOp};`;
+        const icon=L.divIcon({className:'pt-wrap',html:`<div class="pt ${cls}" style="--c:${cfg.color};${extra}"></div>`,iconSize:[18,18],iconAnchor:[9,9]});
+        const m=L.marker(f.latlng,{icon}).bindTooltip(tipText(f),{className:'feat-tip',direction:'top',offset:[0,-6],opacity:1}).addTo(g);
+        if(pop) m.bindPopup(pop);
       }
     });
     if(id==='telecom') builderRisers(g);
   });
   const sig=(currentClient||'')+'|'+ORDER.map(id=>state.data[id].features.length).join(',');
   if(sig!==builder.sig){ builder.sig=sig; builderFit(); }
-  refreshLegendWidgets();
+  renderLayerList(); refreshLegendWidgets(); refreshLayerListWidgets(); updateScaleWidgets();
 }
 function builderFit(){
   const all=[];
@@ -1814,21 +1963,98 @@ function builderFit(){
   if(all.length) builder.map.fitBounds(L.latLngBounds(all).pad(0.25));
 }
 
-/* ---------- builder widgets: text boxes + legend ---------- */
-function addWidget(type){
-  if(type==='legend'&&builder.widgets.some(w=>w.type==='legend')){ toast('The legend is already on the map.'); return; }
+/* ---------- widgets tab: Experience Builder style palette ---------- */
+function renderWidgetPalette(){
+  const host=document.getElementById('widgetPalette'); host.innerHTML='';
+  Object.keys(WIDGET_DEFS).forEach(type=>{
+    const d=WIDGET_DEFS[type];
+    const card=document.createElement('div'); card.className='pw'; card.dataset.wtype=type;
+    card.innerHTML=`<svg viewBox="0 0 24 24">${d.icon}</svg><span class="pwn">${d.label}</span><span class="pwd">${d.desc}</span>`;
+    card.addEventListener('pointerdown',e=>paletteDrag(e,type));
+    host.appendChild(card);
+  });
+  refreshPaletteState();
+}
+function refreshPaletteState(){
+  document.querySelectorAll('.pw').forEach(card=>{
+    const t=card.dataset.wtype;
+    card.classList.toggle('placed',!!WIDGET_DEFS[t].single&&builder.widgets.some(w=>w.type===t));
+  });
+}
+function paletteDrag(e,type){
+  e.preventDefault();
+  const sx=e.clientX, sy=e.clientY; let moved=false, ghost=null;
+  const layer=document.getElementById('widgetLayer');
+  const mv=ev=>{
+    if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>4){
+      moved=true;
+      ghost=document.createElement('div'); ghost.className='drag-ghost';
+      ghost.textContent=WIDGET_DEFS[type].label; document.body.appendChild(ghost);
+    }
+    if(ghost){
+      ghost.style.left=ev.clientX+'px'; ghost.style.top=ev.clientY+'px';
+      const r=layer.getBoundingClientRect();
+      ghost.classList.toggle('ok',ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom);
+    }
+  };
+  const up=ev=>{
+    document.removeEventListener('pointermove',mv); document.removeEventListener('pointerup',up);
+    if(ghost) ghost.remove();
+    const r=layer.getBoundingClientRect();
+    if(moved){
+      if(ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom)
+        addWidgetAt(type,(ev.clientX-r.left)/r.width,(ev.clientY-r.top)/r.height);
+    } else addWidgetAt(type,null,null);
+  };
+  document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up);
+}
+function addWidgetAt(type,x,y){
+  if(WIDGET_DEFS[type].single&&builder.widgets.some(w=>w.type===type)){ toast(WIDGET_DEFS[type].label+' is already on the map.'); return; }
   const n=builder.widgets.length;
-  const w={id:'w'+(builder.nextW++),type,x:Math.min(.6,.05+(n%6)*.04),y:Math.min(.6,.06+(n%6)*.05)};
+  const w={ id:'w'+(builder.nextW++), type,
+    x:x!=null?Math.min(.97,Math.max(0,x)):Math.min(.6,.05+(n%6)*.04),
+    y:y!=null?Math.min(.96,Math.max(0,y)):Math.min(.6,.06+(n%6)*.05) };
   if(type==='text'){ w.text='New text box'; w.fontSize=16; }
-  builder.widgets.push(w); renderWidgetEl(w);
+  builder.widgets.push(w); renderWidgetEl(w); refreshPaletteState();
+}
+function visibleLegendRows(){
+  let rows='';
+  ORDER.forEach(id=>{ const n=counts(id).total; if(!n||!builder.layers[id].visible) return;
+    rows+=`<div class="w-leg-row"><span class="sw" style="background:${builder.layers[id].color}"></span>${UTILS[id].label}<b>${n}</b></div>`; });
+  return rows;
 }
 function legendWidgetHTML(){
+  return '<div class="w-leg-title">Legend</div>'+(visibleLegendRows()||'<div class="w-leg-empty">No visible layers</div>');
+}
+function layerListWidgetHTML(){
   let rows='';
   ORDER.forEach(id=>{ const n=counts(id).total; if(!n) return;
-    rows+=`<div class="w-leg-row"><span class="sw" style="background:${builder.sym[id].color}"></span>${UTILS[id].label}<b>${n}</b></div>`; });
-  return '<div class="w-leg-title">Legend</div>'+(rows||'<div class="w-leg-empty">No assets yet</div>');
+    rows+=`<label class="w-lyrrow"><input type="checkbox" data-ll="${id}" ${builder.layers[id].visible?'checked':''}><span class="dot" style="background:${builder.layers[id].color}"></span>${UTILS[id].label}<b>${n}</b></label>`; });
+  return '<div class="w-leg-title">Layers</div>'+(rows||'<div class="w-leg-empty">No assets yet</div>');
 }
 function refreshLegendWidgets(){ document.querySelectorAll('#widgetLayer .w-legend').forEach(el=>el.innerHTML=legendWidgetHTML()); }
+function refreshLayerListWidgets(){
+  document.querySelectorAll('#widgetLayer .w-layers').forEach(el=>{
+    el.innerHTML=layerListWidgetHTML();
+    el.querySelectorAll('input[data-ll]').forEach(cb=>cb.onchange=()=>setLayerVisible(cb.dataset.ll,cb.checked));
+  });
+}
+function updateScaleWidgets(){
+  if(!builder.map) return;
+  const els=document.querySelectorAll('#widgetLayer .w-scale'); if(!els.length) return;
+  const s=niceScale(builder.map,120);
+  els.forEach(el=>{ el.querySelector('.ws-bar').style.width=s.px+'px'; el.querySelector('.ws-lab').textContent=s.label; });
+}
+function niceScale(m,maxPx){
+  const y=Math.round(m.getSize().y/2);
+  const d=m.distance(m.containerPointToLatLng([0,y]),m.containerPointToLatLng([maxPx,y]));
+  if(!(d>0)) return {px:maxPx,label:''};
+  const pow=Math.pow(10,Math.floor(Math.log(d)/Math.LN10));
+  let best=pow; [1,1.5,2,3,5,10].forEach(c=>{ if(c*pow<=d) best=c*pow; });
+  const label=best>=1000?(Math.round(best/100)/10)+' km':Math.round(best)+' m';
+  return {px:Math.round(maxPx*best/d),label};
+}
+const NORTH_SVG='<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="none" stroke="#2c3038" stroke-width="1.6"/><path d="M16 6.5 20 22l-4-3-4 3Z" fill="#2c3038"/><path d="M16 6.5 12 22l4-3v-12.5Z" fill="#e11d48"/><text x="16" y="30.5" text-anchor="middle" font-family="Figtree,sans-serif" font-size="7" font-weight="700" fill="#2c3038">N</text></svg>';
 function renderWidgetEl(w){
   const layer=document.getElementById('widgetLayer');
   const el=document.createElement('div'); el.className='widget'; el.style.left=(w.x*100)+'%'; el.style.top=(w.y*100)+'%';
@@ -1842,11 +2068,19 @@ function renderWidgetEl(w){
     body.addEventListener('input',()=>{ w.text=body.innerText; });
     mkBtn('A−',()=>{ w.fontSize=Math.max(10,w.fontSize-2); body.style.fontSize=w.fontSize+'px'; },'Smaller text');
     mkBtn('A+',()=>{ w.fontSize=Math.min(48,w.fontSize+2); body.style.fontSize=w.fontSize+'px'; },'Larger text');
-  }else{
+  }else if(w.type==='legend'){
     body=document.createElement('div'); body.className='w-legend'; body.innerHTML=legendWidgetHTML();
+  }else if(w.type==='layerlist'){
+    body=document.createElement('div'); body.className='w-layers';
+  }else if(w.type==='scalebar'){
+    body=document.createElement('div'); body.className='w-scale'; body.innerHTML='<div class="ws-bar"></div><div class="ws-lab"></div>';
+  }else{
+    body=document.createElement('div'); body.className='w-north'; body.innerHTML=NORTH_SVG;
   }
-  mkBtn('✕',()=>{ builder.widgets=builder.widgets.filter(x=>x!==w); el.remove(); },'Remove widget');
+  mkBtn('✕',()=>{ builder.widgets=builder.widgets.filter(x=>x!==w); el.remove(); refreshPaletteState(); },'Remove widget');
   el.appendChild(tools); el.appendChild(body); layer.appendChild(el);
+  if(w.type==='layerlist') refreshLayerListWidgets();
+  if(w.type==='scalebar') updateScaleWidgets();
   tools.addEventListener('pointerdown',e=>{
     if(e.target.tagName==='BUTTON') return;
     e.preventDefault();
@@ -1866,7 +2100,7 @@ function buildViewerHTML(clientName){
     ? {kind:'tiles',title:r.title,visible:r.visible,tileUrl:r.tileUrl,tileOpts:r.tileOpts}
     : {kind:'features',title:r.title,color:r.color,visible:r.visible,geojson:r.geojson});
   const payload={client:clientName,generated:new Date().toLocaleString(),networks:proj.networks,
-    sym:builder.sym,basemap:builder.basemap,widgets:builder.widgets,view,arcgis};
+    layers:builder.layers,basemap:builder.basemap,widgets:builder.widgets,view,arcgis};
   const dataJSON=JSON.stringify(payload).replace(/</g,'\\u003c');
   const title=escapeHtml(clientName)+' — Asset Map';
   return `<!DOCTYPE html>
@@ -1891,20 +2125,27 @@ function buildViewerHTML(clientName){
   .client{font-size:14px;font-weight:600;color:var(--ink);padding-left:13px;border-left:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .spacer{flex:1}
   .gen{font-size:12px;color:var(--ink-faint);white-space:nowrap}
-  .hlegend{display:flex;gap:8px;align-items:center;flex-wrap:nowrap}
-  .chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink-dim);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 11px;cursor:pointer;user-select:none;transition:.15s;white-space:nowrap}
-  .chip .dot{width:10px;height:10px;border-radius:3px}
-  .chip b{color:var(--ink)}
-  .chip.off{opacity:.42}
   #mapwrap{flex:1;position:relative}
   #map{position:absolute;inset:0}
   #wl{position:absolute;inset:0;z-index:1000;pointer-events:none}
   .w-text{position:absolute;max-width:340px;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-sm);padding:9px 13px;font-weight:600;color:var(--ink);line-height:1.35;white-space:pre-wrap}
-  .w-legend{position:absolute;background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow-sm);padding:11px 14px;min-width:170px}
+  .w-legend,.w-layers{position:absolute;background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow-sm);padding:11px 14px;min-width:175px}
+  .w-layers{pointer-events:auto}
   .w-leg-title{font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:7px}
   .w-leg-row{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink);padding:3px 0}
   .w-leg-row .sw{width:18px;height:3.5px;border-radius:2px;flex:0 0 18px}
-  .w-leg-row b{margin-left:auto;padding-left:14px;color:var(--ink-dim);font-weight:600;font-variant-numeric:tabular-nums}
+  .w-leg-row b,.w-lyrrow b{margin-left:auto;padding-left:14px;color:var(--ink-dim);font-weight:600;font-variant-numeric:tabular-nums}
+  .w-lyrrow{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink);padding:3px 0;cursor:pointer}
+  .w-lyrrow input{width:14px;height:14px;accent-color:#1f2430;cursor:pointer}
+  .w-lyrrow .dot{width:10px;height:10px;border-radius:3px}
+  .w-scale{position:absolute;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow-sm);padding:7px 11px 8px}
+  .ws-bar{height:5px;background:#2c3038;border-radius:2px;position:relative;min-width:24px}
+  .ws-bar::before,.ws-bar::after{content:'';position:absolute;top:-4px;bottom:-4px;width:2px;background:#2c3038}
+  .ws-bar::before{left:0}
+  .ws-bar::after{right:0}
+  .ws-lab{font-size:11px;font-weight:700;color:var(--ink);margin-top:6px;text-align:center;font-variant-numeric:tabular-nums}
+  .w-north{position:absolute;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:50%;box-shadow:var(--shadow-sm);width:46px;height:46px;display:flex;align-items:center;justify-content:center}
+  .w-north svg{width:32px;height:32px}
   .pt-wrap{background:none;border:none}
   .pt{width:18px;height:18px}
   .pt-source{width:13px;height:13px;margin:2px;background:var(--c);transform:rotate(45deg);border:2px solid #fff;box-shadow:0 0 0 1px var(--c),var(--shadow-sm)}
@@ -1929,7 +2170,6 @@ function buildViewerHTML(clientName){
   <span class="badge">Asset map · Read-only</span>
   <span class="client" id="clientName"></span>
   <div class="spacer"></div>
-  <div class="hlegend" id="hlegend"></div>
   <span class="gen" id="gen"></span>
 </header>
 <div id="mapwrap">
@@ -1949,9 +2189,8 @@ var UTILS={
 var ORDER=['telecom','water','electric','oilgas'];
 var STATUS_DASH={Active:null,Construction:'2 6',Planned:'9 7',Abandoned:'7 7'};
 var STATUS_OPACITY={Active:.95,Construction:.92,Planned:.85,Abandoned:.5};
-var SYM=DATA.sym||{};
-function colOf(id){return (SYM[id]&&SYM[id].color)||UTILS[id].color;}
-function wOf(id){return (SYM[id]&&SYM[id].weight)||3.5;}
+var LCONF=DATA.layers||{};
+function cfg(id){ return LCONF[id]||{visible:true,color:UTILS[id].color,weight:3.5,opacity:1,popup:{enabled:true,fields:{}}}; }
 var BASEMAPS={
   gray:[['https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors',maxNativeZoom:16,maxZoom:19}],
         ['https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',{maxNativeZoom:16,maxZoom:19}]],
@@ -1966,16 +2205,31 @@ var map=L.map('map',{zoomControl:true}).setView([32.74,-97.05],12);
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function fmtLen(m){return m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';}
 function lineLen(arr){var t=0;for(var i=1;i<arr.length;i++)t+=map.distance(arr[i-1],arr[i]);return t;}
-function popupHTML(u,f,extraRows){
-  var name=f.props.name||u.terms[f.type];
-  var h='<div class="pp-code">'+esc(f.code)+'</div><div class="pp-name">'+esc(name)+'</div>';
-  var rows=[['Type',u.terms[f.type]],['Network',u.label],['Status',f.props.status||'Active']].concat(extraRows||[]);
+function popupHTML(id,f,len){
+  var c=cfg(id); if(!c.popup||c.popup.enabled===false) return null;
+  var Fd=c.popup.fields||{}, u=UTILS[id];
+  var h='';
+  if(Fd.code!==false) h+='<div class="pp-code">'+esc(f.code)+'</div>';
+  h+='<div class="pp-name">'+esc(f.props.name||u.terms[f.type])+'</div>';
+  var rows=[];
+  if(Fd.type!==false){ rows.push(['Type',u.terms[f.type]]); rows.push(['Network',u.label]); }
+  if(Fd.status!==false) rows.push(['Status',f.props.status||'Active']);
+  if(f.type==='line'&&Fd.length!==false) rows.push(['Length',fmtLen(len)]);
+  if(id==='telecom'&&f.type==='line'&&Fd.fiber!==false){ rows.push(['Fibers',f.props.fiberCount||null]); rows.push(['Placement',f.props.placement||'Aerial']); }
+  if(f.type==='join'&&Fd.links!==false){
+    if(id==='telecom'){
+      rows.push(['Parent line',f.props.parentLine||null]);
+      var br=(f.props.branches||[]).filter(function(b){return b.line;}); if(br.length)rows.push(['Branches',br.length]);
+      var sp=(f.props.splices||[]); if(sp.length)rows.push(['Fiber splices',sp.length]);
+    } else { rows.push(['From line',f.props.fromLine||null]); rows.push(['To line',f.props.toLine||null]); }
+  }
   for(var i=0;i<rows.length;i++){var r=rows[i];if(r[1]==null||r[1]==='')continue;h+='<div class="pr"><span>'+esc(r[0])+'</span><b>'+esc(String(r[1]))+'</b></div>';}
   return h;
 }
 var groups={},nCounts={},all=[];
 ORDER.forEach(function(id){
-  var u=UTILS[id],g=L.layerGroup().addTo(map);groups[id]=g;nCounts[id]=0;
+  var c=cfg(id),g=L.layerGroup();groups[id]=g;nCounts[id]=0;
+  if(c.visible!==false)g.addTo(map);
   var feats=(DATA.networks[id]||{}).features||[];
   feats.forEach(function(f){
     nCounts[id]++;var s=f.props.status||'Active';
@@ -1983,33 +2237,19 @@ ORDER.forEach(function(id){
       var pts=f.latlngs.map(function(p){return L.latLng(p[0],p[1]);});
       pts.forEach(function(ll){all.push(ll);});
       var dash=(id==='telecom')?(f.props.placement==='Underground'?'11 7':(s==='Construction'?'2 6':null)):(STATUS_DASH[s]||null);
-      L.polyline(pts,{color:'#ffffff',weight:wOf(id)+3.5,opacity:.9,interactive:false}).addTo(g);
-      var main=L.polyline(pts,{color:colOf(id),weight:wOf(id),opacity:(STATUS_OPACITY[s]!=null?STATUS_OPACITY[s]:.95),dashArray:dash}).addTo(g);
+      L.polyline(pts,{color:'#ffffff',weight:c.weight+3.5,opacity:.9*c.opacity,interactive:false}).addTo(g);
+      var main=L.polyline(pts,{color:c.color,weight:c.weight,opacity:(STATUS_OPACITY[s]!=null?STATUS_OPACITY[s]:.95)*c.opacity,dashArray:dash}).addTo(g);
       main.bindTooltip(f.props.name||f.code,{className:'feat-tip',direction:'top',opacity:1});
-      var extra=[['Length',fmtLen(lineLen(pts))]];
-      if(id==='telecom'){extra.push(['Fibers',f.props.fiberCount||null]);extra.push(['Placement',f.props.placement||'Aerial']);}
-      main.bindPopup(popupHTML(u,f,extra));
+      var pop=popupHTML(id,f,lineLen(pts)); if(pop)main.bindPopup(pop);
     }else{
       var ll=L.latLng(f.latlng[0],f.latlng[1]);all.push(ll);
       var cls=f.type==='source'?'pt-source':f.type==='join'?'pt-join':'pt-delivery';
-      var xtr=((s==='Planned'||s==='Construction')?'border-style:dashed;':'')+(s==='Abandoned'?'opacity:.5;':'');
-      var icon=L.divIcon({className:'pt-wrap',html:'<div class="pt '+cls+'" style="--c:'+colOf(id)+';'+xtr+'"></div>',iconSize:[18,18],iconAnchor:[9,9]});
+      var op=(s==='Abandoned'?.5:1)*c.opacity;
+      var xtr=((s==='Planned'||s==='Construction')?'border-style:dashed;':'')+'opacity:'+op+';';
+      var icon=L.divIcon({className:'pt-wrap',html:'<div class="pt '+cls+'" style="--c:'+c.color+';'+xtr+'"></div>',iconSize:[18,18],iconAnchor:[9,9]});
       var m=L.marker(ll,{icon:icon}).addTo(g);
       m.bindTooltip(f.props.name||f.code,{className:'feat-tip',direction:'top',offset:[0,-6],opacity:1});
-      var extra=[];
-      if(f.type==='join'){
-        if(id==='telecom'){
-          extra.push(['Parent line',f.props.parentLine||null]);
-          var br=(f.props.branches||[]).filter(function(b){return b.line;});
-          if(br.length)extra.push(['Branches',br.length]);
-          var sp=(f.props.splices||[]);
-          if(sp.length)extra.push(['Fiber splices',sp.length]);
-        }else{
-          extra.push(['From line',f.props.fromLine||null]);
-          extra.push(['To line',f.props.toLine||null]);
-        }
-      }
-      m.bindPopup(popupHTML(u,f,extra));
+      var pop=popupHTML(id,f,0); if(pop)m.bindPopup(pop);
     }
   });
 });
@@ -2036,8 +2276,8 @@ function agsPopupV(p){
   for(var i=0;i<keys.length;i++){var k=keys[i],v=p[k];if(v==null||v==='')continue;h+='<div class="pr"><span>'+esc(k)+'</span><b>'+esc(String(v))+'</b></div>';}
   return h;
 }
-var agsRecs=[];
-(DATA.arcgis||[]).forEach(function(a){
+var agsGroups={};
+(DATA.arcgis||[]).forEach(function(a,i){
   var layer;
   if(a.kind==='tiles'){ layer=L.tileLayer(a.tileUrl,a.tileOpts||{}); }
   else{
@@ -2048,46 +2288,68 @@ var agsRecs=[];
     });
     try{ layer.eachLayer(function(l){ if(l.getLatLng) all.push(l.getLatLng()); else if(l.getBounds){var b=l.getBounds();if(b.isValid()){all.push(b.getNorthEast());all.push(b.getSouthWest());}} }); }catch(e){}
   }
+  a._key='ags'+i;
   if(a.visible!==false) layer.addTo(map);
-  agsRecs.push({rec:a,layer:layer});
-});
-/* header chips: layer toggles */
-var leg=document.getElementById('hlegend');
-ORDER.forEach(function(id){
-  if(!nCounts[id])return;
-  var u=UTILS[id];
-  var c=document.createElement('button');c.className='chip';
-  c.innerHTML='<span class="dot" style="background:'+colOf(id)+'"></span>'+u.label+' <b>'+nCounts[id]+'</b>';
-  var on=true;
-  c.onclick=function(){on=!on;if(on){groups[id].addTo(map);c.classList.remove('off');}else{map.removeLayer(groups[id]);c.classList.add('off');}};
-  leg.appendChild(c);
-});
-agsRecs.forEach(function(r){
-  var a=r.rec, cnt=a.kind==='features'?((a.geojson.features||[]).length):null;
-  var c=document.createElement('button');c.className='chip'+(a.visible===false?' off':'');
-  c.innerHTML='<span class="dot" style="background:'+(a.color||'#64748b')+'"></span>'+esc(a.title)+(cnt!=null?' <b>'+cnt+'</b>':'');
-  var on=a.visible!==false;
-  c.onclick=function(){on=!on;if(on){r.layer.addTo(map);c.classList.remove('off');}else{map.removeLayer(r.layer);c.classList.add('off');}};
-  leg.appendChild(c);
+  agsGroups[a._key]={rec:a,layer:layer};
 });
 /* composed widgets */
 var wl=document.getElementById('wl');
 function legendRowsHTML(){
   var h='';
-  ORDER.forEach(function(id){ if(!nCounts[id])return;
-    h+='<div class="w-leg-row"><span class="sw" style="background:'+colOf(id)+'"></span>'+UTILS[id].label+'<b>'+nCounts[id]+'</b></div>'; });
-  return '<div class="w-leg-title">Legend</div>'+(h||'<div class="w-leg-row">No assets</div>');
+  ORDER.forEach(function(id){ if(!nCounts[id]||cfg(id).visible===false)return;
+    h+='<div class="w-leg-row"><span class="sw" style="background:'+cfg(id).color+'"></span>'+UTILS[id].label+'<b>'+nCounts[id]+'</b></div>'; });
+  (DATA.arcgis||[]).forEach(function(a){ if(a.kind!=='features'||a.visible===false)return;
+    h+='<div class="w-leg-row"><span class="sw" style="background:'+(a.color||'#64748b')+'"></span>'+esc(a.title)+'<b>'+((a.geojson.features||[]).length)+'</b></div>'; });
+  return '<div class="w-leg-title">Legend</div>'+(h||'<div class="w-leg-row">No visible layers</div>');
 }
+function layerListRowsHTML(){
+  var h='';
+  ORDER.forEach(function(id){ if(!nCounts[id])return;
+    h+='<label class="w-lyrrow"><input type="checkbox" data-ll="'+id+'"'+(cfg(id).visible!==false?' checked':'')+'><span class="dot" style="background:'+cfg(id).color+'"></span>'+UTILS[id].label+'<b>'+nCounts[id]+'</b></label>'; });
+  (DATA.arcgis||[]).forEach(function(a){ var cnt=a.kind==='features'?((a.geojson.features||[]).length):'';
+    h+='<label class="w-lyrrow"><input type="checkbox" data-ags="'+a._key+'"'+(a.visible!==false?' checked':'')+'><span class="dot" style="background:'+(a.color||'#64748b')+'"></span>'+esc(a.title)+(cnt!==''?'<b>'+cnt+'</b>':'')+'</label>'; });
+  return '<div class="w-leg-title">Layers</div>'+(h||'<div class="w-leg-row">No assets</div>');
+}
+var NORTH='<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="none" stroke="#2c3038" stroke-width="1.6"/><path d="M16 6.5 20 22l-4-3-4 3Z" fill="#2c3038"/><path d="M16 6.5 12 22l4-3v-12.5Z" fill="#e11d48"/><text x="16" y="30.5" text-anchor="middle" font-family="Figtree,sans-serif" font-size="7" font-weight="700" fill="#2c3038">N</text></svg>';
+function niceScale(m,maxPx){
+  var y=Math.round(m.getSize().y/2);
+  var d=m.distance(m.containerPointToLatLng([0,y]),m.containerPointToLatLng([maxPx,y]));
+  if(!(d>0)) return {px:maxPx,label:''};
+  var pow=Math.pow(10,Math.floor(Math.log(d)/Math.LN10));
+  var best=pow,c=[1,1.5,2,3,5,10];
+  for(var i=0;i<c.length;i++){ if(c[i]*pow<=d) best=c[i]*pow; }
+  var label=best>=1000?(Math.round(best/100)/10)+' km':Math.round(best)+' m';
+  return {px:Math.round(maxPx*best/d),label:label};
+}
+var scaleEls=[];
 (DATA.widgets||[]).forEach(function(w){
   var d=document.createElement('div');
   d.style.left=(w.x*100)+'%'; d.style.top=(w.y*100)+'%';
   if(w.type==='text'){ d.className='w-text'; d.style.fontSize=(w.fontSize||16)+'px'; d.textContent=w.text||''; }
-  else{ d.className='w-legend'; d.innerHTML=legendRowsHTML(); }
+  else if(w.type==='legend'){ d.className='w-legend'; d.innerHTML=legendRowsHTML(); }
+  else if(w.type==='layerlist'){
+    d.className='w-layers'; d.innerHTML=layerListRowsHTML();
+    d.addEventListener('change',function(ev){
+      var id=ev.target.getAttribute('data-ll');
+      if(id){ if(ev.target.checked) groups[id].addTo(map); else map.removeLayer(groups[id]); return; }
+      var ak=ev.target.getAttribute('data-ags');
+      if(ak&&agsGroups[ak]){ if(ev.target.checked) agsGroups[ak].layer.addTo(map); else map.removeLayer(agsGroups[ak].layer); }
+    });
+  }
+  else if(w.type==='scalebar'){ d.className='w-scale'; d.innerHTML='<div class="ws-bar"></div><div class="ws-lab"></div>'; scaleEls.push(d); }
+  else if(w.type==='northarrow'){ d.className='w-north'; d.innerHTML=NORTH; }
   wl.appendChild(d);
 });
+function updateScales(){
+  if(!scaleEls.length)return;
+  var s=niceScale(map,120);
+  scaleEls.forEach(function(el){ el.querySelector('.ws-bar').style.width=s.px+'px'; el.querySelector('.ws-lab').textContent=s.label; });
+}
+map.on('zoomend moveend',updateScales);
 /* framing */
 if(DATA.view&&DATA.view.center){ map.setView(DATA.view.center,DATA.view.zoom); }
 else if(all.length){ map.fitBounds(L.latLngBounds(all).pad(0.25)); }
+updateScales();
 if(!all.length){var e=document.createElement('div');e.className='empty';e.innerHTML='<div class="card">No assets in this project yet.</div>';document.getElementById('mapwrap').appendChild(e);}
 <\/script>
 </body>
