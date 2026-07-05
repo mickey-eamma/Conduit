@@ -81,6 +81,33 @@
   .wbtns{display:flex;flex-direction:column;gap:8px}
   .wbtn{font-family:var(--ui);font-size:13px;font-weight:600;color:var(--ink);text-align:left;background:var(--panel-2);border:1px dashed var(--line);border-radius:9px;padding:10px 12px;cursor:pointer;transition:.15s}
   .wbtn:hover{border-color:#1f2430;color:#1f2430;background:#fff}
+  .b-side .note code{font-size:11px;font-weight:600;color:var(--ink-dim);background:var(--panel-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px}
+  /* ArcGIS layer loader */
+  .ags-add{display:flex;gap:7px}
+  .ags-add input{flex:1;min-width:0;font-family:var(--ui);font-size:12.5px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 9px;transition:.13s}
+  .ags-add input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
+  .ags-add .btn{padding:8px 13px;flex:0 0 auto}
+  .ags-add .btn.busy{opacity:.6;pointer-events:none}
+  .ags-status{font-size:11.5px;line-height:1.45;color:var(--ink-dim);margin-top:9px;display:none}
+  .ags-status.show{display:block}
+  .ags-status.err{color:#c2334d}
+  .ags-list{margin-top:11px}
+  .ags-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--line-soft)}
+  .ags-row .ags-check{width:16px;height:16px;border-radius:5px;border:1.5px solid #cfcabe;flex:0 0 16px;display:grid;place-items:center;background:#fff;cursor:pointer;transition:.12s}
+  .ags-row.on .ags-check{background:#1f2430;border-color:#1f2430}
+  .ags-row .ags-check svg{width:10px;height:10px;stroke:#fff;stroke-width:3;fill:none;opacity:0}
+  .ags-row.on .ags-check svg{opacity:1}
+  .ags-row .ags-sw{width:10px;height:10px;border-radius:3px;flex:0 0 10px}
+  .ags-row .ags-nm{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  .ags-row:not(.on) .ags-nm{color:var(--ink-faint)}
+  .ags-row .ags-ct{font-size:11px;font-weight:600;color:var(--ink-faint);flex:0 0 auto;font-variant-numeric:tabular-nums}
+  .ags-row .ags-del{flex:0 0 auto;width:22px;height:22px;border:none;background:transparent;color:var(--ink-faint);font-size:17px;line-height:1;cursor:pointer;border-radius:6px}
+  .ags-row .ags-del:hover{color:#c2334d;background:#fdf3f5}
+  .leaflet-popup-content .pr{display:flex;justify-content:space-between;gap:14px;font-size:12.5px;padding:3.5px 0;border-top:1px solid var(--line-soft)}
+  .leaflet-popup-content .pr:first-child{border-top:none}
+  .leaflet-popup-content .pr span{color:var(--ink-dim)}
+  .leaflet-popup-content .pr b{color:var(--ink);font-weight:600;text-align:right;word-break:break-word}
+  .leaflet-popup-content .pp-name{font-size:13.5px;font-weight:700;margin-bottom:6px}
   .b-canvas{flex:1;position:relative;min-width:0}
   #bmap{position:absolute;inset:0;background:#e8e6e0}
   .widget-layer{position:absolute;inset:0;z-index:1000;pointer-events:none}
@@ -440,6 +467,16 @@
             <option value="imagery">Imagery</option>
           </select>
         </div>
+      </section>
+      <section>
+        <h3>ArcGIS layers</h3>
+        <div class="ags-add">
+          <input id="agsUrl" type="text" placeholder="Paste ArcGIS REST URL…" autocomplete="off" spellcheck="false">
+          <button class="btn" id="agsAdd">Add</button>
+        </div>
+        <div class="ags-status" id="agsStatus"></div>
+        <div class="ags-list" id="agsList"></div>
+        <p class="note">Add a Feature Layer, Feature/Map Service, or cached MapServer by URL &mdash; e.g. <code>&hellip;/FeatureServer/0</code>. Layers draw on the canvas and travel with the deployed map.</p>
       </section>
       <section>
         <h3>Widgets</h3>
@@ -1509,6 +1546,7 @@ const BASEMAPS={
     ['https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',maxZoom:19}]]}
 };
 const builder={ map:null, groups:{}, baseLayers:[], sig:null, widgets:[], nextW:1, basemap:'gray',
+  arcgisLayers:[], nextA:1,
   sym:{ telecom:{color:'#7c4ddb',weight:3.5}, water:{color:'#0891b2',weight:3.5}, electric:{color:'#e08700',weight:3.5}, oilgas:{color:'#e11d48',weight:3.5} } };
 
 function setMainView(v){
@@ -1532,11 +1570,152 @@ function initBuilder(){
   document.getElementById('bmSelect').onchange=e=>{ builder.basemap=e.target.value; applyBuilderBasemap(); };
   document.getElementById('addTextW').onclick=()=>addWidget('text');
   document.getElementById('addLegendW').onclick=()=>addWidget('legend');
+  document.getElementById('agsAdd').onclick=addArcgisLayer;
+  document.getElementById('agsUrl').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); addArcgisLayer(); } });
 }
 function applyBuilderBasemap(){
   builder.baseLayers.forEach(l=>builder.map.removeLayer(l)); builder.baseLayers=[];
   (BASEMAPS[builder.basemap]||BASEMAPS.gray).layers.forEach(t=>builder.baseLayers.push(L.tileLayer(t[0],t[1]).addTo(builder.map)));
 }
+/* ---------- ArcGIS REST layers ---------- */
+const AGS_PALETTE=['#2563eb','#db2777','#059669','#d97706','#7c3aed','#0d9488','#dc2626','#4338ca'];
+function agsStatus(msg,isErr){
+  const el=document.getElementById('agsStatus'); if(!el) return;
+  el.textContent=msg||''; el.classList.toggle('err',!!isErr); el.classList.toggle('show',!!msg);
+}
+function agsNormalize(url){ return url.trim().replace(/[?#].*$/,'').replace(/\/+$/,''); }
+async function agsFetchJson(url){
+  const res=await fetch(url+(url.includes('?')?'&':'?')+'f=json');
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const j=await res.json();
+  if(j.error) throw new Error(j.error.message||'Service returned an error');
+  return j;
+}
+function esriToGeoJSON(ej){
+  const feats=(ej.features||[]).map(f=>{
+    const g=f.geometry, out={type:'Feature',properties:f.attributes||{},geometry:null};
+    if(!g) {}
+    else if(g.x!=null&&isFinite(g.x)) out.geometry={type:'Point',coordinates:[g.x,g.y]};
+    else if(g.paths) out.geometry=g.paths.length>1?{type:'MultiLineString',coordinates:g.paths}:{type:'LineString',coordinates:g.paths[0]};
+    else if(g.rings) out.geometry={type:'Polygon',coordinates:g.rings};
+    return out;
+  }).filter(f=>f.geometry);
+  return {type:'FeatureCollection',features:feats,exceededTransferLimit:!!ej.exceededTransferLimit};
+}
+async function agsQueryFeatures(layerUrl){
+  const q='/query?where=1%3D1&outFields=*&outSR=4326&returnGeometry=true&resultRecordCount=4000&f=';
+  // Prefer GeoJSON; fall back to Esri JSON for older servers.
+  try{
+    const r=await fetch(layerUrl+q+'geojson');
+    if(r.ok){ const gj=await r.json(); if(gj&&gj.type==='FeatureCollection'&&!gj.error) return gj; }
+  }catch(e){}
+  const r2=await fetch(layerUrl+q+'json');
+  if(!r2.ok) throw new Error('HTTP '+r2.status);
+  const ej=await r2.json();
+  if(ej.error) throw new Error(ej.error.message||'Query failed');
+  return esriToGeoJSON(ej);
+}
+function agsPopup(props){
+  const keys=Object.keys(props||{}).slice(0,12); let h='';
+  keys.forEach(k=>{ const v=props[k]; if(v==null||v==='') return; h+=`<div class="pr"><span>${escapeHtml(k)}</span><b>${escapeHtml(String(v))}</b></div>`; });
+  return `<div class="pp-name">Feature</div>`+(h||'<div class="pr"><span>No attributes</span></div>');
+}
+function agsGeoJsonLayer(gj,color){
+  return L.geoJSON(gj,{
+    style:{color,weight:2.5,opacity:.9,fillColor:color,fillOpacity:.15},
+    pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:5,color:'#fff',weight:1.5,fillColor:color,fillOpacity:.95}),
+    onEachFeature:(f,layer)=>layer.bindPopup(agsPopup(f.properties))
+  });
+}
+function agsPushFeatureLayer(name,url,gj){
+  const color=AGS_PALETTE[(builder.nextA-1)%AGS_PALETTE.length];
+  const rec={id:'a'+(builder.nextA++),kind:'features',url,title:name,color,visible:true,geojson:gj};
+  rec.layer=agsGeoJsonLayer(gj,color);
+  if(builder.map) rec.layer.addTo(builder.map);
+  builder.arcgisLayers.push(rec);
+  renderAgsList();
+  try{ const b=rec.layer.getBounds(); if(b.isValid()) builder.map.fitBounds(b.pad(0.2)); }catch(e){}
+  return (gj.features||[]).length;
+}
+function agsAddTileLayer(url,meta){
+  const rec={id:'a'+(builder.nextA++),kind:'tiles',url,title:meta.mapName||meta.name||'Tiled service',color:'#64748b',visible:true,
+    tileUrl:url+'/tile/{z}/{y}/{x}',tileOpts:{maxZoom:19,attribution:meta.copyrightText||'ArcGIS'}};
+  rec.layer=L.tileLayer(rec.tileUrl,rec.tileOpts);
+  if(builder.map) rec.layer.addTo(builder.map);
+  builder.arcgisLayers.push(rec);
+  renderAgsList();
+}
+async function addArcgisLayer(){
+  const input=document.getElementById('agsUrl'), btn=document.getElementById('agsAdd');
+  const url=agsNormalize(input.value||'');
+  if(!url){ agsStatus('Paste an ArcGIS REST endpoint URL first.',true); return; }
+  if(!/(feature|map|image)server/i.test(url)){ agsStatus('That doesn’t look like an ArcGIS REST endpoint (expecting a FeatureServer/MapServer URL).',true); return; }
+  btn.classList.add('busy'); agsStatus('Loading…',false);
+  try{
+    const meta=await agsFetchJson(url);
+    if(meta.geometryType || (typeof meta.type==='string'&&/layer/i.test(meta.type))){
+      // A single layer endpoint (…/FeatureServer/0)
+      const gj=await agsQueryFeatures(url);
+      const n=agsPushFeatureLayer(meta.name||url.split('/').slice(-2).join(' '),url,gj);
+      agsStatus(`Added “${meta.name||'layer'}” · ${n} feature${n!==1?'s':''}${gj.exceededTransferLimit?' (first page)':''}.`,false);
+    } else if(meta.singleFusedMapCache){
+      // A cached (tiled) MapServer
+      agsAddTileLayer(url,meta);
+      agsStatus(`Added tiled service “${meta.mapName||meta.name||'layer'}”.`,false);
+    } else if(Array.isArray(meta.layers)&&meta.layers.length){
+      // A service root — load each drawable sublayer
+      const subs=meta.layers.filter(l=>!(l.subLayerIds&&l.subLayerIds.length));
+      if(!subs.length) throw new Error('No drawable layers in this service.');
+      let added=0,total=0,truncated=false;
+      for(const l of subs){
+        try{
+          const lurl=url+'/'+l.id;
+          const gj=await agsQueryFeatures(lurl);
+          total+=agsPushFeatureLayer(l.name||('Layer '+l.id),lurl,gj);
+          truncated=truncated||!!gj.exceededTransferLimit; added++;
+        }catch(e){ /* skip layers that won't query */ }
+      }
+      if(!added) throw new Error('Couldn’t load any layers from this service.');
+      agsStatus(`Added ${added} layer${added!==1?'s':''} · ${total} feature${total!==1?'s':''}${truncated?' (some truncated)':''}.`,false);
+    } else {
+      throw new Error('Unsupported endpoint — point to a Feature Layer, service, or cached MapServer.');
+    }
+    input.value='';
+  }catch(err){
+    agsStatus('Couldn’t add layer: '+(err&&err.message||err),true);
+  }finally{
+    btn.classList.remove('busy');
+  }
+}
+function renderAgsList(){
+  const host=document.getElementById('agsList'); if(!host) return;
+  host.innerHTML='';
+  builder.arcgisLayers.forEach(rec=>{
+    const count=rec.kind==='features'?((rec.geojson.features||[]).length+' ft'):'tiles';
+    const row=document.createElement('div'); row.className='ags-row'+(rec.visible?' on':'');
+    row.innerHTML=`<span class="ags-check"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-6"/></svg></span>
+      <span class="ags-sw" style="background:${rec.color}"></span>
+      <span class="ags-nm" title="${escapeHtml(rec.url)}">${escapeHtml(rec.title)}</span>
+      <span class="ags-ct">${count}</span>
+      <button class="ags-del" title="Remove layer">&times;</button>`;
+    row.querySelector('.ags-check').onclick=()=>toggleAgsLayer(rec);
+    row.querySelector('.ags-nm').onclick=()=>toggleAgsLayer(rec);
+    row.querySelector('.ags-del').onclick=()=>removeAgsLayer(rec);
+    host.appendChild(row);
+  });
+}
+function toggleAgsLayer(rec){
+  rec.visible=!rec.visible;
+  if(!builder.map) return;
+  if(rec.visible) rec.layer.addTo(builder.map); else builder.map.removeLayer(rec.layer);
+  renderAgsList();
+}
+function removeAgsLayer(rec){
+  if(rec.layer&&builder.map) builder.map.removeLayer(rec.layer);
+  builder.arcgisLayers=builder.arcgisLayers.filter(r=>r!==rec);
+  renderAgsList();
+}
+
 function renderSymRows(){
   const host=document.getElementById('symRows'); host.innerHTML='';
   ORDER.forEach(id=>{
@@ -1642,8 +1821,11 @@ function renderWidgetEl(w){
 function buildViewerHTML(clientName){
   const proj=serializeProject();
   const view=builder.map?{center:[builder.map.getCenter().lat,builder.map.getCenter().lng],zoom:builder.map.getZoom()}:null;
+  const arcgis=builder.arcgisLayers.map(r=> r.kind==='tiles'
+    ? {kind:'tiles',title:r.title,visible:r.visible,tileUrl:r.tileUrl,tileOpts:r.tileOpts}
+    : {kind:'features',title:r.title,color:r.color,visible:r.visible,geojson:r.geojson});
   const payload={client:clientName,generated:new Date().toLocaleString(),networks:proj.networks,
-    sym:builder.sym,basemap:builder.basemap,widgets:builder.widgets,view};
+    sym:builder.sym,basemap:builder.basemap,widgets:builder.widgets,view,arcgis};
   const dataJSON=JSON.stringify(payload).replace(/</g,'\\u003c');
   const title=escapeHtml(clientName)+' — Asset Map';
   return `<!DOCTYPE html>
@@ -1807,6 +1989,27 @@ ORDER.forEach(function(id){
     m.addTo(groups.telecom);
   });
 })();
+/* ArcGIS REST layers */
+function agsPopupV(p){
+  var keys=Object.keys(p||{}).slice(0,12),h='<div class="pp-name">Feature</div>';
+  for(var i=0;i<keys.length;i++){var k=keys[i],v=p[k];if(v==null||v==='')continue;h+='<div class="pr"><span>'+esc(k)+'</span><b>'+esc(String(v))+'</b></div>';}
+  return h;
+}
+var agsRecs=[];
+(DATA.arcgis||[]).forEach(function(a){
+  var layer;
+  if(a.kind==='tiles'){ layer=L.tileLayer(a.tileUrl,a.tileOpts||{}); }
+  else{
+    layer=L.geoJSON(a.geojson,{
+      style:{color:a.color,weight:2.5,opacity:.9,fillColor:a.color,fillOpacity:.15},
+      pointToLayer:function(f,ll){return L.circleMarker(ll,{radius:5,color:'#fff',weight:1.5,fillColor:a.color,fillOpacity:.95});},
+      onEachFeature:function(f,l){ l.bindPopup(agsPopupV(f.properties)); }
+    });
+    try{ layer.eachLayer(function(l){ if(l.getLatLng) all.push(l.getLatLng()); else if(l.getBounds){var b=l.getBounds();if(b.isValid()){all.push(b.getNorthEast());all.push(b.getSouthWest());}} }); }catch(e){}
+  }
+  if(a.visible!==false) layer.addTo(map);
+  agsRecs.push({rec:a,layer:layer});
+});
 /* header chips: layer toggles */
 var leg=document.getElementById('hlegend');
 ORDER.forEach(function(id){
@@ -1816,6 +2019,14 @@ ORDER.forEach(function(id){
   c.innerHTML='<span class="dot" style="background:'+colOf(id)+'"></span>'+u.label+' <b>'+nCounts[id]+'</b>';
   var on=true;
   c.onclick=function(){on=!on;if(on){groups[id].addTo(map);c.classList.remove('off');}else{map.removeLayer(groups[id]);c.classList.add('off');}};
+  leg.appendChild(c);
+});
+agsRecs.forEach(function(r){
+  var a=r.rec, cnt=a.kind==='features'?((a.geojson.features||[]).length):null;
+  var c=document.createElement('button');c.className='chip'+(a.visible===false?' off':'');
+  c.innerHTML='<span class="dot" style="background:'+(a.color||'#64748b')+'"></span>'+esc(a.title)+(cnt!=null?' <b>'+cnt+'</b>':'');
+  var on=a.visible!==false;
+  c.onclick=function(){on=!on;if(on){r.layer.addTo(map);c.classList.remove('off');}else{map.removeLayer(r.layer);c.classList.add('off');}};
   leg.appendChild(c);
 });
 /* composed widgets */
