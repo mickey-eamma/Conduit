@@ -328,6 +328,11 @@
   .map-area[data-cursor="draw"] #map{cursor:crosshair}
   .map-area[data-cursor="delete"] #map{cursor:not-allowed}
 
+  .import-ctl{position:absolute;top:14px;right:14px;z-index:1000;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+  .import-btn{box-shadow:var(--shadow);background:var(--panel);font-weight:600}
+  .import-btn:hover{background:var(--panel-2)}
+  .import-clear{box-shadow:var(--shadow);font-size:12px}
+  .import-clear:hover{color:#c2334d;border-color:#f0c2cc;background:#fdf3f5}
   .hint{position:absolute;bottom:46px;left:50%;transform:translateX(-50%);z-index:1000;font-size:12.5px;font-weight:500;color:var(--ink-dim);background:var(--panel);border:1px solid var(--line);padding:8px 15px;border-radius:22px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:9px;max-width:90%}
   .hint .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:0 0 auto}
   .hint b{color:var(--ink);font-weight:600}
@@ -545,6 +550,11 @@
         <button class="vt" data-view="dashboard">Dashboard</button>
       </div>
       <div id="map"></div>
+      <div class="import-ctl">
+        <button class="btn import-btn" id="importBtn" title="Import a KMZ/KML and trace its lines into this network">&#8613; Import KMZ</button>
+        <input type="file" id="importFile" accept=".kmz,.kml,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml" hidden>
+        <button class="btn import-clear" id="importClear" hidden>Clear import (<span id="importCount">0</span>)</button>
+      </div>
       <div class="basemap-note" id="bmNote">
         <span class="bm-dot"></span>
         <span><b>Basemap offline in this preview.</b> You're seeing a coordinate grid instead of streets. Download this file and open it locally, or deploy it, and the Esri basemap loads automatically. Drawing, snapping, and export all work here.</span>
@@ -847,8 +857,8 @@ function newFeature(type){
   return {id:state.uid,type,util:state.util,code,props};
 }
 
-function commitLine(latlngs){
-  const feat=newFeature('line'); feat.latlngs=latlngs;
+function commitLine(latlngs,name){
+  const feat=newFeature('line'); if(name) feat.props.name=name; feat.latlngs=latlngs;
   const color=UTILS[feat.util].color;
   const casing=L.polyline(latlngs,{color:'#ffffff',weight:7,opacity:.9});
   const main=L.polyline(latlngs,{color,weight:3.5,opacity:.95});
@@ -857,6 +867,98 @@ function commitLine(latlngs){
   main.on('click',ev=>onFeatureClick(feat,ev));
   main.bindTooltip(tipText(feat),{className:'feat-tip',direction:'top',opacity:1});
   state.data[feat.util].features.push(feat); applyStatusStyle(feat); afterChange();
+}
+
+/* ---------- KMZ/KML import: trace lines into the current network ---------- */
+let importGroup=null, importItems=[];
+async function inflateRaw(bytes){
+  if(typeof DecompressionStream==='undefined') throw new Error('This browser can’t unzip KMZ — try a plain .kml file.');
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+async function extractKmlFromZip(buf){
+  const dv=new DataView(buf), u8=new Uint8Array(buf), len=buf.byteLength, dec=new TextDecoder();
+  let eocd=-1;
+  for(let i=len-22;i>=0 && i>=len-22-65536;i--){ if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; } }
+  if(eocd<0) throw new Error('Not a valid KMZ (no zip directory found).');
+  const cdCount=dv.getUint16(eocd+10,true), cdOffset=dv.getUint32(eocd+16,true);
+  let p=cdOffset, ent=null;
+  for(let n=0;n<cdCount;n++){
+    if(dv.getUint32(p,true)!==0x02014b50) break;
+    const method=dv.getUint16(p+10,true), compSize=dv.getUint32(p+20,true);
+    const fnLen=dv.getUint16(p+28,true), exLen=dv.getUint16(p+30,true), cmLen=dv.getUint16(p+32,true);
+    const localOff=dv.getUint32(p+42,true);
+    const fname=dec.decode(u8.subarray(p+46,p+46+fnLen));
+    if(/\.kml$/i.test(fname) && (!ent || /doc\.kml$/i.test(fname))) ent={method,compSize,localOff,fname};
+    p+=46+fnLen+exLen+cmLen;
+  }
+  if(!ent) throw new Error('No .kml found inside the KMZ.');
+  const lfnLen=dv.getUint16(ent.localOff+26,true), lexLen=dv.getUint16(ent.localOff+28,true);
+  const dataStart=ent.localOff+30+lfnLen+lexLen, comp=u8.subarray(dataStart,dataStart+ent.compSize);
+  let out;
+  if(ent.method===0) out=comp;
+  else if(ent.method===8) out=await inflateRaw(comp);
+  else throw new Error('Unsupported KMZ compression method.');
+  return dec.decode(out);
+}
+function kmlCoords(str){
+  return str.trim().split(/\s+/).map(tok=>{
+    const p=tok.split(','), lng=parseFloat(p[0]), lat=parseFloat(p[1]);
+    return (isFinite(lng)&&isFinite(lat))?L.latLng(lat,lng):null;
+  }).filter(Boolean);
+}
+function parseKmlLines(text){
+  const doc=new DOMParser().parseFromString(text,'text/xml');
+  if(doc.getElementsByTagName('parsererror').length) throw new Error('Couldn’t parse the KML.');
+  const out=[], pms=doc.getElementsByTagNameNS('*','Placemark');
+  for(const pm of pms){
+    const nmEl=pm.getElementsByTagNameNS('*','name')[0], nm=nmEl?nmEl.textContent.trim():'';
+    const lss=pm.getElementsByTagNameNS('*','LineString');
+    for(const ls of lss){
+      const co=ls.getElementsByTagNameNS('*','coordinates')[0]; if(!co) continue;
+      const lls=kmlCoords(co.textContent);
+      if(lls.length>=2) out.push({name:nm,latlngs:lls});
+    }
+  }
+  return out;
+}
+async function parseImportFile(file){
+  const nm=(file.name||'').toLowerCase(), buf=await file.arrayBuffer();
+  const text = nm.endsWith('.kml') ? new TextDecoder().decode(new Uint8Array(buf)) : await extractKmlFromZip(buf);
+  return parseKmlLines(text);
+}
+function updateImportUI(){
+  const clr=document.getElementById('importClear'), cnt=document.getElementById('importCount');
+  if(cnt) cnt.textContent=importItems.length;
+  if(clr) clr.hidden=importItems.length===0;
+}
+function clearImport(){ if(importGroup){map.removeLayer(importGroup);importGroup=null;} importItems=[]; updateImportUI(); }
+function importOne(rec){
+  commitLine(rec.item.latlngs.map(ll=>L.latLng(ll.lat,ll.lng)), rec.item.name||'');
+  importGroup.removeLayer(rec.pl); importItems=importItems.filter(x=>x!==rec); updateImportUI();
+  toast(`Added “${rec.item.name||'line'}” to ${UTILS[state.util].label}.`);
+}
+function renderImport(lines){
+  clearImport();
+  importGroup=L.layerGroup().addTo(map);
+  const all=[];
+  lines.forEach(item=>{
+    const pl=L.polyline(item.latlngs,{color:'#ea580c',weight:3.5,opacity:.95,dashArray:'5 5'}).addTo(importGroup);
+    pl.bindTooltip((item.name||'Imported line')+' — click to add',{className:'feat-tip',direction:'top',opacity:1});
+    const rec={item,pl}; pl.on('click',ev=>{ L.DomEvent.stop(ev); importOne(rec); });
+    importItems.push(rec); item.latlngs.forEach(ll=>all.push(ll));
+  });
+  updateImportUI();
+  if(all.length) map.fitBounds(L.latLngBounds(all).pad(0.2));
+  toast(`Loaded ${lines.length} line${lines.length!==1?'s':''} — click a highlighted line to add it to ${UTILS[state.util].label}.`);
+}
+async function onImportFile(file){
+  if(!file) return;
+  try{
+    const lines=await parseImportFile(file);
+    if(!lines.length) toast('No lines (LineStrings) found in that file.');
+    else renderImport(lines);
+  }catch(err){ toast('Import failed: '+(err&&err.message||err)); }
 }
 function addPoint(type,latlng){
   const feat=newFeature(type); feat.latlng=latlng;
@@ -3092,6 +3194,9 @@ window.addEventListener('load',()=>{
   renderLegend(); renderLayers(); renderTotals(); refreshTips();
   document.getElementById('exportBtn').onclick=exportGeoJSON;
   document.getElementById('deployBtn').onclick=deployAssetMap;
+  document.getElementById('importBtn').onclick=()=>document.getElementById('importFile').click();
+  document.getElementById('importFile').onchange=e=>{ const f=e.target.files&&e.target.files[0]; onImportFile(f); e.target.value=''; };
+  document.getElementById('importClear').onclick=clearImport;
   document.querySelectorAll('.mt').forEach(b=>b.onclick=()=>setMainView(b.dataset.mview));
   document.getElementById('bmClose').onclick=hideBasemapNote;
   document.querySelectorAll('.vt').forEach(b=>b.onclick=()=>setView(b.dataset.view));
