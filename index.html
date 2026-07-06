@@ -362,6 +362,8 @@
   .btn.matrix{width:100%;justify-content:center;margin-top:4px;color:#fff;background:var(--telecom);border-color:var(--telecom);font-size:12.5px}
   .btn.matrix:hover{filter:brightness(1.06)}
   .btn.matrix:disabled{opacity:.5;cursor:not-allowed;filter:none}
+  .btn.flow{width:100%;justify-content:center;margin-top:4px;color:#fff;background:var(--accent);border-color:var(--accent);font-size:12.5px}
+  .btn.flow:hover{filter:brightness(1.06)}
 
   .fiber-modal{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(28,32,38,.46);backdrop-filter:blur(2px)}
   .fiber-dialog{background:#fff;width:min(640px,95vw);max-height:88vh;border-radius:16px;box-shadow:0 30px 80px -22px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
@@ -611,7 +613,7 @@ const TOOLS = {
 const state={ util:'telecom', tool:'pan', snap:true, uid:1, selected:null, data:{} };
 let map, draftLatLngs=[], draftLayer=null, draftVerts=null, halo=null, grat=null, tilesOk=false, relHalos=[];
 let fiberModal=null, currentSplice=null, dragWire=null, armed=null;
-let fiberTableModal=null, traceModal=null, traceHalos=[];
+let fiberTableModal=null, traceModal=null, traceHalos=[], flowHalos=[];
 
 function initMap(){
   map=L.map('map',{doubleClickZoom:false,zoomControl:true}).setView([32.74,-97.05],12);
@@ -754,6 +756,7 @@ function newFeature(type){
   if(type==='line' && state.util==='telecom'){ props.fiberCount=48; props.placement='Aerial'; }
   if(type==='join'){
     if(state.util==='telecom'){ props.parentLine=''; props.branches=[]; props.splices=[]; }
+    else if(isFlowNet(state.util)){ props.fromLine=''; props.toLines=[]; }
     else { props.fromLine=''; props.toLine=''; }
   }
   return {id:state.uid,type,util:state.util,code,props};
@@ -810,6 +813,57 @@ function applyStatusStyle(feat){
 function lineByCode(util,code){return state.data[util].features.find(f=>f.type==='line'&&f.code===code);}
 function clearRelHalos(){relHalos.forEach(h=>map.removeLayer(h));relHalos=[];}
 function telecomSplice(feat){return feat.type==='join'&&feat.util==='telecom';}
+// Water & oil/gas model a joint as one upstream pipe branching to many downstream pipes.
+function isFlowNet(util){ return util==='water'||util==='oilgas'; }
+// Downstream pipe codes at a joint (migrates the legacy single toLine).
+function downOf(j){ return (j.props.toLines||(j.props.toLine?[j.props.toLine]:[])).filter(Boolean); }
+function flowAdjacency(util){
+  const adj=new Map();
+  state.data[util].features.forEach(j=>{
+    if(j.type!=='join'||!j.props.fromLine) return;
+    downOf(j).forEach(to=>{ if(!adj.has(j.props.fromLine)) adj.set(j.props.fromLine,[]); adj.get(j.props.fromLine).push(to); });
+  });
+  return adj;
+}
+// Every pipe reachable following the flow direction from startCode (includes startCode).
+function downstreamLines(util,startCode){
+  const adj=flowAdjacency(util);
+  const seen=new Set([startCode]); const q=[startCode];
+  while(q.length){ const cur=q.shift(); (adj.get(cur)||[]).forEach(n=>{ if(!seen.has(n)){ seen.add(n); q.push(n); } }); }
+  return seen;
+}
+function clearFlow(){ flowHalos.forEach(h=>map.removeLayer(h)); flowHalos=[]; }
+function traceDownstream(lineFeat){
+  clearFlow();
+  const util=lineFeat.util, color=UTILS[util].color;
+  const set=downstreamLines(util,lineFeat.code);
+  const all=[]; let count=0, totalM=0;
+  set.forEach(code=>{
+    const ln=lineByCode(util,code); if(!ln) return;
+    const start=code===lineFeat.code;
+    flowHalos.push(L.polyline(ln.latlngs,{color:start?'#1f2430':color,weight:start?7:11,opacity:start?.55:.34,interactive:false}).addTo(map));
+    ln.latlngs.forEach(ll=>all.push(ll));
+    if(!start){ count++; totalM+=lineLength(ln); }
+  });
+  if(all.length) map.fitBounds(L.latLngBounds(all).pad(0.3));
+  const term=UTILS[util].terms.line.toLowerCase();
+  toast(count?`${count} downstream ${term}${count!==1?'s':''} · ${fmtLen(totalM)}`:`No downstream ${term}s from here — set the upstream/downstream pipes at the joints.`);
+}
+function downRowsHTML(feat){
+  return (feat.props.toLines||[]).map((code,i)=>`
+    <div class="branch-row" data-i="${i}">
+      <select class="br-line dn-line">${lineOptions(feat.util,code,feat.props.fromLine)}</select>
+      <button class="br-del" title="Remove downstream pipe">&times;</button>
+    </div>`).join('');
+}
+function flowJoinWarn(feat){
+  const nLines=state.data[feat.util].features.filter(f=>f.type==='line').length;
+  const term=UTILS[feat.util].terms.line.toLowerCase();
+  if(nLines<2) return `Draw at least two ${term}s to connect.`;
+  if(!feat.props.fromLine) return 'Select the upstream pipe feeding this joint.';
+  if(!downOf(feat).length) return 'Add at least one downstream pipe branching from this joint.';
+  return '';
+}
 // Is this telecom line a branch off some splice? If so its strands are assigned there.
 function branchAssignmentFor(lineFeat){
   if(lineFeat.util!=='telecom') return null;
@@ -846,9 +900,10 @@ function highlightRelations(feat){
   clearRelHalos();
   if(feat.type!=='join') return;
   const color=UTILS[feat.util].color;
-  const codes = telecomSplice(feat)
-    ? [feat.props.parentLine,...(feat.props.branches||[]).map(b=>b.line)]
-    : [feat.props.fromLine,feat.props.toLine];
+  let codes;
+  if(telecomSplice(feat)) codes=[feat.props.parentLine,...(feat.props.branches||[]).map(b=>b.line)];
+  else if(isFlowNet(feat.util)) codes=[feat.props.fromLine,...downOf(feat)];
+  else codes=[feat.props.fromLine,feat.props.toLine];
   codes.forEach(code=>{const ln=lineByCode(feat.util,code);if(ln)relHalos.push(L.polyline(ln.latlngs,{color,weight:10,opacity:.28,interactive:false}).addTo(map));});
 }
 function selectFeature(feat){
@@ -862,7 +917,7 @@ function selectFeature(feat){
 function deselect(){
   state.selected=null;
   if(halo){map.removeLayer(halo);halo=null;}
-  clearRelHalos();
+  clearRelHalos(); clearFlow();
   document.getElementById('attrBody').innerHTML=`<p class="attr-empty">Choose the <b>Select</b> tool and click any feature on the map to name it and edit its details.</p>`;
 }
 function lineOptions(util,selected,exclude){
@@ -923,6 +978,7 @@ function renderAttr(){
     }
     extra+=`<div class="field"><label>Length</label><div class="ro">${fmtLen(lineLength(feat))}</div></div>`;
     if(feat.util==='telecom') extra+=`<button class="btn matrix" id="aTrace">Trace fibers</button>`;
+    if(isFlowNet(feat.util)) extra+=`<button class="btn flow" id="aFlow">Trace downstream</button>`;
   }
   let rel='';
   if(feat.type==='join'){
@@ -941,6 +997,20 @@ function renderAttr(){
       const ready=feat.props.parentLine&&(feat.props.branches||[]).some(b=>b.line);
       rel+=`<button class="btn matrix" id="aMatrix" ${ready?'':'disabled'}>Open fiber splice matrix</button>`;
       rel+=`</div>`;
+    } else if(isFlowNet(feat.util)){
+      // migrate legacy single toLine -> toLines, then drop stale refs
+      if(feat.props.toLine!==undefined){ if(!Array.isArray(feat.props.toLines)) feat.props.toLines=feat.props.toLine?[feat.props.toLine]:[]; delete feat.props.toLine; }
+      if(!Array.isArray(feat.props.toLines)) feat.props.toLines=[];
+      if(feat.props.fromLine && !lineByCode(feat.util,feat.props.fromLine)) feat.props.fromLine='';
+      feat.props.toLines=feat.props.toLines.filter(c=>!c||lineByCode(feat.util,c));
+      const term=u.terms.line.toLowerCase(), nDown=downOf(feat).length, warn=flowJoinWarn(feat);
+      rel=`<div class="rel-block">
+        <div class="field"><label>Upstream ${term}</label><select id="aFrom">${lineOptions(feat.util,feat.props.fromLine)}</select></div>
+        <div class="fiber-head"><span>Downstream ${term}s</span><span class="fiber-tally">${nDown} branch${nDown!==1?'es':''}</span></div>
+        <div id="downList">${downRowsHTML(feat)}</div>
+        <button class="btn add" id="aAddDown" ${feat.props.fromLine?'':'disabled'}>+ Add downstream ${term}</button>
+        ${warn?`<div class="rel-warn">${warn}</div>`:''}
+      </div>`;
     } else {
       ['fromLine','toLine'].forEach(k=>{ if(feat.props[k] && !lineByCode(feat.util,feat.props[k])) feat.props[k]=''; });
       const nLines=state.data[feat.util].features.filter(f=>f.type==='line').length;
@@ -971,6 +1041,8 @@ function renderAttr(){
   if(placeEl) placeEl.onchange=e=>{feat.props.placement=e.target.value;applyStatusStyle(feat);recomputeRisers();};
   const traceEl=document.getElementById('aTrace');
   if(traceEl) traceEl.onclick=()=>openFiberTable(feat);
+  const flowEl=document.getElementById('aFlow');
+  if(flowEl) flowEl.onclick=()=>traceDownstream(feat);
   // generic joint
   const fromEl=document.getElementById('aFrom');
   if(fromEl) fromEl.onchange=e=>{feat.props.fromLine=e.target.value;highlightRelations(feat);renderAttr();};
@@ -987,12 +1059,20 @@ function renderAttr(){
     feat.props.branches.push({line:'',from:start,to:s.X||start});
     renderAttr();
   };
-  document.querySelectorAll('.branch-row').forEach(row=>{
+  document.querySelectorAll('#branchList .branch-row').forEach(row=>{
     const i=+row.dataset.i; const b=feat.props.branches[i];
     row.querySelector('.br-line').onchange=e=>{b.line=e.target.value;highlightRelations(feat);renderAttr();};
     row.querySelector('.br-from').oninput=e=>{b.from=e.target.value===''?'':parseInt(e.target.value);updateFiberTally();updateBranchCount(row,b);};
     row.querySelector('.br-to').oninput=e=>{b.to=e.target.value===''?'':parseInt(e.target.value);updateFiberTally();updateBranchCount(row,b);};
     row.querySelector('.br-del').onclick=()=>{feat.props.branches.splice(i,1);highlightRelations(feat);renderAttr();};
+  });
+  // flow joint (water / oil & gas): one upstream, many downstream
+  const addDownEl=document.getElementById('aAddDown');
+  if(addDownEl) addDownEl.onclick=()=>{ feat.props.toLines.push(''); highlightRelations(feat); renderAttr(); };
+  document.querySelectorAll('#downList .branch-row').forEach(row=>{
+    const i=+row.dataset.i;
+    row.querySelector('.dn-line').onchange=e=>{ feat.props.toLines[i]=e.target.value; highlightRelations(feat); renderAttr(); };
+    row.querySelector('.br-del').onclick=()=>{ feat.props.toLines.splice(i,1); highlightRelations(feat); renderAttr(); };
   });
   document.getElementById('aDelete').onclick=()=>removeFeature(feat);
   document.getElementById('aDone').onclick=()=>deselect();
@@ -1422,6 +1502,9 @@ function geojsonToProject(gj){
         props.parentLine=p.parent_line||'';
         props.branches=(p.branches||[]).map(b=>({line:b.line||'',from:b.fiber_from,to:b.fiber_to}));
         props.splices=(p.fiber_splices||[]).map(c=>({inFiber:c.in_fiber,outLine:c.out_line,outFiber:c.out_fiber}));
+      } else if(net==='water'||net==='oilgas'){
+        props.fromLine=p.from_line||'';
+        props.toLines=Array.isArray(p.to_lines)?p.to_lines.filter(Boolean):(p.to_line?[p.to_line]:[]);
       } else { props.fromLine=p.from_line||''; props.toLine=p.to_line||''; }
     }
     const feat={type:role,code:p.id,props};
@@ -1628,6 +1711,9 @@ function exportGeoJSON(){
         props.parent_line=f.props.parentLine||null;
         props.branches=(f.props.branches||[]).filter(b=>b.line).map(b=>({line:b.line,fiber_from:parseInt(b.from)||null,fiber_to:parseInt(b.to)||null}));
         props.fiber_splices=(f.props.splices||[]).map(c=>({in_fiber:c.inFiber,out_line:c.outLine,out_fiber:c.outFiber}));
+      } else if(id==='water'||id==='oilgas'){
+        props.from_line=f.props.fromLine||null;
+        props.to_lines=(f.props.toLines||(f.props.toLine?[f.props.toLine]:[])).filter(Boolean);
       } else { props.from_line=f.props.fromLine||null; props.to_line=f.props.toLine||null; }
     }
     if(f.type==='line'){
@@ -1921,6 +2007,10 @@ function builderPopupHTML(id,f){
       rows.push(['Parent line',f.props.parentLine||null]);
       const br=(f.props.branches||[]).filter(b=>b.line); if(br.length) rows.push(['Branches',br.length]);
       const sp=(f.props.splices||[]); if(sp.length) rows.push(['Fiber splices',sp.length]);
+    } else if(id==='water'||id==='oilgas'){
+      rows.push(['Upstream',f.props.fromLine||null]);
+      const dn=(f.props.toLines||(f.props.toLine?[f.props.toLine]:[])).filter(Boolean);
+      if(dn.length) rows.push(['Downstream',dn.length]);
     } else { rows.push(['From line',f.props.fromLine||null]); rows.push(['To line',f.props.toLine||null]); }
   }
   rows.forEach(r=>{ if(r[1]==null||r[1]==='') return; h+=`<div class="pr"><span>${r[0]}</span><b>${escapeHtml(String(r[1]))}</b></div>`; });
@@ -2221,6 +2311,10 @@ function popupHTML(id,f,len){
       rows.push(['Parent line',f.props.parentLine||null]);
       var br=(f.props.branches||[]).filter(function(b){return b.line;}); if(br.length)rows.push(['Branches',br.length]);
       var sp=(f.props.splices||[]); if(sp.length)rows.push(['Fiber splices',sp.length]);
+    } else if(id==='water'||id==='oilgas'){
+      rows.push(['Upstream',f.props.fromLine||null]);
+      var dn=(f.props.toLines||(f.props.toLine?[f.props.toLine]:[])).filter(function(x){return x;});
+      if(dn.length) rows.push(['Downstream',dn.length]);
     } else { rows.push(['From line',f.props.fromLine||null]); rows.push(['To line',f.props.toLine||null]); }
   }
   for(var i=0;i<rows.length;i++){var r=rows[i];if(r[1]==null||r[1]==='')continue;h+='<div class="pr"><span>'+esc(r[0])+'</span><b>'+esc(String(r[1]))+'</b></div>';}
