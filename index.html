@@ -3275,13 +3275,21 @@ function liveUrlFor(name){ return location.origin+location.pathname+'?view='+enc
 // Live view mode: ?view=<client> renders the read-only map from the currently saved client each load.
 async function renderLiveView(name){
   const clients=await loadClients(), proj=clients[name];
+  document.title=name+' — Asset Map';
+  document.body.innerHTML=''; document.body.style.visibility=''; document.body.style.margin='0'; document.body.style.background='#f3f1ec';
   if(!proj){
-    document.documentElement.innerHTML='<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>'+escapeHtml(name)+' — Asset Map</title></head><body style="font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f3f1ec;color:#2c3038;text-align:center;padding:24px"><div><h2 style="margin:0 0 8px">No saved data for &ldquo;'+escapeHtml(name)+'&rdquo;.</h2><p style="color:#6c7480;max-width:420px">A live asset map reads from the browser where the client was saved. Open this link in that browser, or deploy again after saving the client.</p></div></body>';
+    document.body.innerHTML='<div style="font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px;color:#2c3038"><div><h2 style="margin:0 0 8px">No saved data for &ldquo;'+escapeHtml(name)+'&rdquo;.</h2><p style="color:#6c7480;max-width:420px">A live asset map reads from the browser where the client was saved. Open this link in that browser, or deploy again after saving the client.</p></div></div>';
     return;
   }
   let comp={}; try{ const raw=await Store.get(DEPLOY_PREFIX+name); if(raw) comp=JSON.parse(raw); }catch(e){}
   const html=viewerHTMLFromPayload(makePayload(name,proj.networks,comp));
-  document.open(); document.write(html); document.close();
+  // Render inside a full-page iframe so the viewer loads as a normal document
+  // (scripts execute in order and Leaflet is ready before the map code runs).
+  const f=document.createElement('iframe');
+  f.setAttribute('title',name+' — Asset Map');
+  f.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0';
+  document.body.appendChild(f);
+  f.srcdoc=html;
 }
 async function deployAssetMap(){
   const total=ORDER.reduce((s,id)=>s+state.data[id].features.length,0);
