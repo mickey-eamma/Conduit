@@ -526,6 +526,39 @@
     .panel{flex:0 0 auto;max-height:220px;border-left:none;border-top:1px solid var(--line)}
     .brand .sub{display:none}
   }
+
+  /* ---- Auth (simple client-side gate) ---- */
+  .auth-overlay{position:fixed;inset:0;z-index:5000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+  .auth-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:26px 24px;width:min(360px,92vw);display:flex;flex-direction:column;gap:11px}
+  .auth-brand{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+  .auth-brand .mark{width:22px;height:22px;border-radius:7px;background:conic-gradient(from 200deg,var(--telecom),var(--water),var(--electric),var(--oilgas),var(--telecom));box-shadow:var(--shadow-sm)}
+  .auth-brand .nm{font-weight:700;font-size:19px;letter-spacing:-.3px}
+  .auth-card h2{font-size:16px;font-weight:700;margin:2px 0}
+  .auth-card label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--ink-dim)}
+  .auth-card input{font-family:var(--ui);font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:9px;padding:10px 11px}
+  .auth-card input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
+  .auth-card .btn.primary{justify-content:center;margin-top:4px;padding:11px}
+  .auth-err{font-size:12.5px;font-weight:600;color:#c2334d;min-height:15px}
+  .auth-note{font-size:11px;color:var(--ink-faint);line-height:1.4;margin-top:2px}
+  .user-bar{display:flex;align-items:center;gap:7px}
+  .user-bar .ub-name{font-size:12.5px;font-weight:600;color:var(--ink-dim);white-space:nowrap;padding-right:2px}
+  .users-modal{position:fixed;inset:0;z-index:4500;display:flex;align-items:center;justify-content:center;background:rgba(28,32,38,.46);backdrop-filter:blur(2px)}
+  .users-dialog{background:#fff;width:min(560px,95vw);max-height:88vh;border-radius:16px;box-shadow:0 30px 80px -22px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+  .users-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line)}
+  .users-head .t{font-weight:700;font-size:15.5px}
+  .users-head .s{font-size:12px;color:var(--ink-dim);margin-top:2px}
+  .users-head .x{flex:0 0 auto;width:30px;height:30px;border:1px solid var(--line);background:var(--panel);border-radius:8px;color:var(--ink-dim);font-size:19px;line-height:1;cursor:pointer}
+  .users-body{padding:14px 18px;overflow:auto}
+  .urow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .urow input,.urow select{font-family:var(--ui);font-size:13px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 9px}
+  .urow input{flex:1;min-width:0}
+  .urow select{flex:0 0 auto}
+  .urow .urdel{flex:0 0 auto;padding:7px 11px}
+  .users-add{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line-soft);flex-wrap:wrap;align-items:center}
+  .users-add input,.users-add select{font-family:var(--ui);font-size:13px;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 9px}
+  .users-add input{flex:1;min-width:110px}
+  .users-foot{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line);align-items:center}
+  .users-foot .sp{flex:1;font-size:11.5px;color:var(--ink-faint);line-height:1.4}
 </style>
 </head>
 <body>
@@ -544,6 +577,11 @@
         <button class="btn cb-btn" id="clientNew" title="Start a new blank client">New</button>
         <button class="btn cb-btn" id="clientRename" title="Rename this client">Rename</button>
         <button class="btn cb-btn danger" id="clientDelete" title="Delete this client">Delete</button>
+      </div>
+      <div class="user-bar" id="userBar" hidden>
+        <span class="ub-name" id="ubName"></span>
+        <button class="btn cb-btn" id="usersBtn" hidden>Users</button>
+        <button class="btn cb-btn" id="signOut">Sign out</button>
       </div>
       <button class="btn primary" id="exportBtn">Export GeoJSON</button>
     </div>
@@ -678,6 +716,39 @@
   </div>
 
   <div class="dash" id="dash" hidden></div>
+
+  <div class="auth-overlay" id="loginOverlay">
+    <form class="auth-card" id="loginForm">
+      <div class="auth-brand"><span class="mark"></span><span class="nm">Conduit</span></div>
+      <h2>Sign in</h2>
+      <label>Username<input id="loginUser" autocomplete="username"></label>
+      <label>Password<input id="loginPass" type="password" autocomplete="current-password"></label>
+      <div class="auth-err" id="loginErr"></div>
+      <button class="btn primary" type="submit">Sign in</button>
+      <p class="auth-note">This is a simple access gate, not real security &mdash; credentials are stored in this page and visible to anyone who views the source.</p>
+    </form>
+  </div>
+
+  <div class="users-modal" id="usersModal" hidden>
+    <div class="users-dialog">
+      <div class="users-head">
+        <div><div class="t">Users</div><div class="s">Manage who can sign in. Changes save in this browser.</div></div>
+        <button class="x" id="usersClose">&times;</button>
+      </div>
+      <div class="users-body" id="usersList"></div>
+      <div class="users-add">
+        <input id="nuUser" placeholder="New username" autocomplete="off">
+        <input id="nuPass" placeholder="Password" autocomplete="off">
+        <select id="nuRole"><option value="user">User</option><option value="admin">Admin</option></select>
+        <button class="btn" id="nuAdd">Add user</button>
+      </div>
+      <div class="users-foot">
+        <span class="sp">To make these the built-in defaults (shared across browsers), Copy for HTML and paste into the <code>USERS</code> list in the file.</span>
+        <button class="btn" id="usersCopy">Copy for HTML</button>
+        <button class="btn danger" id="usersReset">Reset</button>
+      </div>
+    </div>
+  </div>
 
 <script id="conduit-default" type="application/json">{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"id":"TEL-LN-001","name":null,"status":"Active","network":"telecom","network_label":"Telecom","role":"line","type_label":"Fiber cable","length_m":322,"fiber_count":48,"placement":"Aerial"},"geometry":{"type":"LineString","coordinates":[[-97.07531332969667,32.7624123703981],[-97.07547426223756,32.762285981753216],[-97.07571029663086,32.761861675704544],[-97.07576394081116,32.76113944799288],[-97.0757532119751,32.75998387146891],[-97.07532405853273,32.759974843468264]]}},{"type":"Feature","properties":{"id":"TEL-LN-002","name":null,"status":"Active","network":"telecom","network_label":"Telecom","role":"line","type_label":"Fiber cable","length_m":336,"fiber_count":48,"placement":"Underground"},"geometry":{"type":"LineString","coordinates":[[-97.07532405853273,32.759974843468264],[-97.07485198974611,32.75998387146891],[-97.07360744476318,32.759974843468264],[-97.07172989845277,32.75994775946088]]}},{"type":"Feature","properties":{"id":"TEL-LN-003","name":null,"status":"Active","network":"telecom","network_label":"Telecom","role":"line","type_label":"Fiber cable","length_m":242,"fiber_count":48,"placement":"Aerial"},"geometry":{"type":"LineString","coordinates":[[-97.07172989845277,32.75994775946088],[-97.07045316696167,32.75994775946088],[-97.0691442489624,32.759974843468264]]}},{"type":"Feature","properties":{"id":"TEL-JN-006","name":null,"status":"Active","network":"telecom","network_label":"Telecom","role":"join","type_label":"Splice point","parent_line":"TEL-LN-001","branches":[{"line":"TEL-LN-002","fiber_from":1,"fiber_to":48}],"fiber_splices":[{"in_fiber":1,"out_line":"TEL-LN-002","out_fiber":1},{"in_fiber":2,"out_line":"TEL-LN-002","out_fiber":2},{"in_fiber":3,"out_line":"TEL-LN-002","out_fiber":3},{"in_fiber":4,"out_line":"TEL-LN-002","out_fiber":4},{"in_fiber":5,"out_line":"TEL-LN-002","out_fiber":5},{"in_fiber":6,"out_line":"TEL-LN-002","out_fiber":6},{"in_fiber":7,"out_line":"TEL-LN-002","out_fiber":7},{"in_fiber":8,"out_line":"TEL-LN-002","out_fiber":8},{"in_fiber":9,"out_line":"TEL-LN-002","out_fiber":9},{"in_fiber":10,"out_line":"TEL-LN-002","out_fiber":10},{"in_fiber":11,"out_line":"TEL-LN-002","out_fiber":11},{"in_fiber":12,"out_line":"TEL-LN-002","out_fiber":12},{"in_fiber":13,"out_line":"TEL-LN-002","out_fiber":13},{"in_fiber":14,"out_line":"TEL-LN-002","out_fiber":14},{"in_fiber":15,"out_line":"TEL-LN-002","out_fiber":15},{"in_fiber":16,"out_line":"TEL-LN-002","out_fiber":16},{"in_fiber":17,"out_line":"TEL-LN-002","out_fiber":17},{"in_fiber":18,"out_line":"TEL-LN-002","out_fiber":18},{"in_fiber":19,"out_line":"TEL-LN-002","out_fiber":19},{"in_fiber":20,"out_line":"TEL-LN-002","out_fiber":20},{"in_fiber":21,"out_line":"TEL-LN-002","out_fiber":21},{"in_fiber":22,"out_line":"TEL-LN-002","out_fiber":22},{"in_fiber":23,"out_line":"TEL-LN-002","out_fiber":23},{"in_fiber":24,"out_line":"TEL-LN-002","out_fiber":24},{"in_fiber":25,"out_line":"TEL-LN-002","out_fiber":25},{"in_fiber":26,"out_line":"TEL-LN-002","out_fiber":26},{"in_fiber":27,"out_line":"TEL-LN-002","out_fiber":27},{"in_fiber":28,"out_line":"TEL-LN-002","out_fiber":28},{"in_fiber":29,"out_line":"TEL-LN-002","out_fiber":29},{"in_fiber":30,"out_line":"TEL-LN-002","out_fiber":30},{"in_fiber":31,"out_line":"TEL-LN-002","out_fiber":31},{"in_fiber":32,"out_line":"TEL-LN-002","out_fiber":32},{"in_fiber":33,"out_line":"TEL-LN-002","out_fiber":33},{"in_fiber":34,"out_line":"TEL-LN-002","out_fiber":34},{"in_fiber":35,"out_line":"TEL-LN-002","out_fiber":35},{"in_fiber":36,"out_line":"TEL-LN-002","out_fiber":36},{"in_fiber":37,"out_line":"TEL-LN-002","out_fiber":37},{"in_fiber":38,"out_line":"TEL-LN-002","out_fiber":38},{"in_fiber":39,"out_line":"TEL-LN-002","out_fiber":39},{"in_fiber":40,"out_line":"TEL-LN-002","out_fiber":40},{"in_fiber":41,"out_line":"TEL-LN-002","out_fiber":41},{"in_fiber":42,"out_line":"TEL-LN-002","out_fiber":42},{"in_fiber":43,"out_line":"TEL-LN-002","out_fiber":43},{"in_fiber":44,"out_line":"TEL-LN-002","out_fiber":44},{"in_fiber":45,"out_line":"TEL-LN-002","out_fiber":45},{"in_fiber":46,"out_line":"TEL-LN-002","out_fiber":46},{"in_fiber":47,"out_line":"TEL-LN-002","out_fiber":47},{"in_fiber":48,"out_line":"TEL-LN-002","out_fiber":48}]},"geometry":{"type":"Point","coordinates":[-97.07532405853273,32.759974843468264]}},{"type":"Feature","properties":{"id":"TEL-JN-007","name":null,"status":"Active","network":"telecom","network_label":"Telecom","role":"join","type_label":"Splice point","parent_line":"TEL-LN-002","branches":[{"line":"TEL-LN-003","fiber_from":1,"fiber_to":48}],"fiber_splices":[{"in_fiber":1,"out_line":"TEL-LN-003","out_fiber":1},{"in_fiber":2,"out_line":"TEL-LN-003","out_fiber":2},{"in_fiber":3,"out_line":"TEL-LN-003","out_fiber":3},{"in_fiber":4,"out_line":"TEL-LN-003","out_fiber":4},{"in_fiber":5,"out_line":"TEL-LN-003","out_fiber":5},{"in_fiber":6,"out_line":"TEL-LN-003","out_fiber":6},{"in_fiber":7,"out_line":"TEL-LN-003","out_fiber":7},{"in_fiber":8,"out_line":"TEL-LN-003","out_fiber":8},{"in_fiber":9,"out_line":"TEL-LN-003","out_fiber":9},{"in_fiber":10,"out_line":"TEL-LN-003","out_fiber":10},{"in_fiber":11,"out_line":"TEL-LN-003","out_fiber":11},{"in_fiber":12,"out_line":"TEL-LN-003","out_fiber":12},{"in_fiber":13,"out_line":"TEL-LN-003","out_fiber":13},{"in_fiber":14,"out_line":"TEL-LN-003","out_fiber":14},{"in_fiber":15,"out_line":"TEL-LN-003","out_fiber":15},{"in_fiber":16,"out_line":"TEL-LN-003","out_fiber":16},{"in_fiber":17,"out_line":"TEL-LN-003","out_fiber":17},{"in_fiber":18,"out_line":"TEL-LN-003","out_fiber":18},{"in_fiber":19,"out_line":"TEL-LN-003","out_fiber":19},{"in_fiber":20,"out_line":"TEL-LN-003","out_fiber":20},{"in_fiber":21,"out_line":"TEL-LN-003","out_fiber":21},{"in_fiber":22,"out_line":"TEL-LN-003","out_fiber":22},{"in_fiber":23,"out_line":"TEL-LN-003","out_fiber":23},{"in_fiber":24,"out_line":"TEL-LN-003","out_fiber":24},{"in_fiber":25,"out_line":"TEL-LN-003","out_fiber":25},{"in_fiber":26,"out_line":"TEL-LN-003","out_fiber":26},{"in_fiber":27,"out_line":"TEL-LN-003","out_fiber":27},{"in_fiber":28,"out_line":"TEL-LN-003","out_fiber":28},{"in_fiber":29,"out_line":"TEL-LN-003","out_fiber":29},{"in_fiber":30,"out_line":"TEL-LN-003","out_fiber":30},{"in_fiber":31,"out_line":"TEL-LN-003","out_fiber":31},{"in_fiber":32,"out_line":"TEL-LN-003","out_fiber":32},{"in_fiber":33,"out_line":"TEL-LN-003","out_fiber":33},{"in_fiber":34,"out_line":"TEL-LN-003","out_fiber":34},{"in_fiber":35,"out_line":"TEL-LN-003","out_fiber":35},{"in_fiber":36,"out_line":"TEL-LN-003","out_fiber":36},{"in_fiber":37,"out_line":"TEL-LN-003","out_fiber":37},{"in_fiber":38,"out_line":"TEL-LN-003","out_fiber":38},{"in_fiber":39,"out_line":"TEL-LN-003","out_fiber":39},{"in_fiber":40,"out_line":"TEL-LN-003","out_fiber":40},{"in_fiber":41,"out_line":"TEL-LN-003","out_fiber":41},{"in_fiber":42,"out_line":"TEL-LN-003","out_fiber":42},{"in_fiber":43,"out_line":"TEL-LN-003","out_fiber":43},{"in_fiber":44,"out_line":"TEL-LN-003","out_fiber":44},{"in_fiber":45,"out_line":"TEL-LN-003","out_fiber":45},{"in_fiber":46,"out_line":"TEL-LN-003","out_fiber":46},{"in_fiber":47,"out_line":"TEL-LN-003","out_fiber":47},{"in_fiber":48,"out_line":"TEL-LN-003","out_fiber":48}]},"geometry":{"type":"Point","coordinates":[-97.07172989845277,32.75994775946088]}},{"type":"Feature","properties":{"id":"TEL-LN-008","name":null,"status":"Construction","network":"telecom","network_label":"Telecom","role":"line","type_label":"Fiber cable","length_m":242,"fiber_count":48,"placement":"Aerial"},"geometry":{"type":"LineString","coordinates":[[-97.0691442489624,32.759974843468264],[-97.06792116165163,32.75998387146891],[-97.06794261932374,32.76113042010943],[-97.06794261932374,32.76113042010943]]}},{"type":"Feature","properties":{"id":"TEL-JN-009","name":null,"status":"Active","network":"telecom","network_label":"Telecom","role":"join","type_label":"Splice point","parent_line":"TEL-LN-003","branches":[{"line":"TEL-LN-008","fiber_from":1,"fiber_to":48}],"fiber_splices":[{"in_fiber":1,"out_line":"TEL-LN-008","out_fiber":1},{"in_fiber":2,"out_line":"TEL-LN-008","out_fiber":2},{"in_fiber":3,"out_line":"TEL-LN-008","out_fiber":3},{"in_fiber":4,"out_line":"TEL-LN-008","out_fiber":4},{"in_fiber":5,"out_line":"TEL-LN-008","out_fiber":5},{"in_fiber":6,"out_line":"TEL-LN-008","out_fiber":6},{"in_fiber":7,"out_line":"TEL-LN-008","out_fiber":7},{"in_fiber":8,"out_line":"TEL-LN-008","out_fiber":8},{"in_fiber":9,"out_line":"TEL-LN-008","out_fiber":9},{"in_fiber":10,"out_line":"TEL-LN-008","out_fiber":10},{"in_fiber":11,"out_line":"TEL-LN-008","out_fiber":11},{"in_fiber":12,"out_line":"TEL-LN-008","out_fiber":12},{"in_fiber":13,"out_line":"TEL-LN-008","out_fiber":13},{"in_fiber":14,"out_line":"TEL-LN-008","out_fiber":14},{"in_fiber":15,"out_line":"TEL-LN-008","out_fiber":15},{"in_fiber":16,"out_line":"TEL-LN-008","out_fiber":16},{"in_fiber":17,"out_line":"TEL-LN-008","out_fiber":17},{"in_fiber":18,"out_line":"TEL-LN-008","out_fiber":18},{"in_fiber":19,"out_line":"TEL-LN-008","out_fiber":19},{"in_fiber":20,"out_line":"TEL-LN-008","out_fiber":20},{"in_fiber":21,"out_line":"TEL-LN-008","out_fiber":21},{"in_fiber":22,"out_line":"TEL-LN-008","out_fiber":22},{"in_fiber":23,"out_line":"TEL-LN-008","out_fiber":23},{"in_fiber":24,"out_line":"TEL-LN-008","out_fiber":24},{"in_fiber":25,"out_line":"TEL-LN-008","out_fiber":25},{"in_fiber":26,"out_line":"TEL-LN-008","out_fiber":26},{"in_fiber":27,"out_line":"TEL-LN-008","out_fiber":27},{"in_fiber":28,"out_line":"TEL-LN-008","out_fiber":28},{"in_fiber":29,"out_line":"TEL-LN-008","out_fiber":29},{"in_fiber":30,"out_line":"TEL-LN-008","out_fiber":30},{"in_fiber":31,"out_line":"TEL-LN-008","out_fiber":31},{"in_fiber":32,"out_line":"TEL-LN-008","out_fiber":32},{"in_fiber":33,"out_line":"TEL-LN-008","out_fiber":33},{"in_fiber":34,"out_line":"TEL-LN-008","out_fiber":34},{"in_fiber":35,"out_line":"TEL-LN-008","out_fiber":35},{"in_fiber":36,"out_line":"TEL-LN-008","out_fiber":36},{"in_fiber":37,"out_line":"TEL-LN-008","out_fiber":37},{"in_fiber":38,"out_line":"TEL-LN-008","out_fiber":38},{"in_fiber":39,"out_line":"TEL-LN-008","out_fiber":39},{"in_fiber":40,"out_line":"TEL-LN-008","out_fiber":40},{"in_fiber":41,"out_line":"TEL-LN-008","out_fiber":41},{"in_fiber":42,"out_line":"TEL-LN-008","out_fiber":42},{"in_fiber":43,"out_line":"TEL-LN-008","out_fiber":43},{"in_fiber":44,"out_line":"TEL-LN-008","out_fiber":44},{"in_fiber":45,"out_line":"TEL-LN-008","out_fiber":45},{"in_fiber":46,"out_line":"TEL-LN-008","out_fiber":46},{"in_fiber":47,"out_line":"TEL-LN-008","out_fiber":47},{"in_fiber":48,"out_line":"TEL-LN-008","out_fiber":48}]},"geometry":{"type":"Point","coordinates":[-97.0691442489624,32.759974843468264]}},{"type":"Feature","properties":{"id":"TEL-SRC-010","name":null,"status":"Active","network":"telecom","network_label":"Telecom","role":"source","type_label":"Central office / headend"},"geometry":{"type":"Point","coordinates":[-97.07531332969667,32.7624123703981]}},{"type":"Feature","properties":{"id":"TEL-DLV-011","name":null,"status":"Active","network":"telecom","network_label":"Telecom","role":"delivery","type_label":"Service drop"},"geometry":{"type":"Point","coordinates":[-97.06794261932374,32.76113042010943]}},{"type":"Feature","properties":{"id":"WTR-LN-013","name":null,"status":"Active","network":"water","network_label":"Water","role":"line","type_label":"Water main","length_m":453},"geometry":{"type":"LineString","coordinates":[[-97.0636296272278,32.767158337497186],[-97.06371545791627,32.766309769820296],[-97.06403732299806,32.7649737107013],[-97.06446647644044,32.76315013819229]]}},{"type":"Feature","properties":{"id":"WTR-LN-014","name":null,"status":"Planned","network":"water","network_label":"Water","role":"line","type_label":"Water main","length_m":522},"geometry":{"type":"LineString","coordinates":[[-97.06446647644044,32.76315013819229],[-97.06450939178468,32.7621390323879],[-97.06283569335938,32.76215708794939],[-97.06292152404787,32.75988205836808]]}},{"type":"Feature","properties":{"id":"WTR-LN-015","name":null,"status":"Construction","network":"water","network_label":"Water","role":"line","type_label":"Water main","length_m":1280},"geometry":{"type":"LineString","coordinates":[[-97.06292152404787,32.75988205836808],[-97.06290006637575,32.759376488344856],[-97.07598924636842,32.759593161563444]]}},{"type":"Feature","properties":{"id":"WTR-LN-016","name":null,"status":"Active","network":"water","network_label":"Water","role":"line","type_label":"Water main","length_m":566},"geometry":{"type":"LineString","coordinates":[[-97.07598924636842,32.759593161563444],[-97.0759677886963,32.76204875452554],[-97.07530260086061,32.76322235959605],[-97.07448720932008,32.76291541822538],[-97.07388639450075,32.76262653126278]]}},{"type":"Feature","properties":{"id":"WTR-JN-017","name":null,"status":"Abandoned","network":"water","network_label":"Water","role":"join","type_label":"Valve / fitting","from_line":"WTR-LN-015","to_line":"WTR-LN-016"},"geometry":{"type":"Point","coordinates":[-97.07598924636842,32.759593161563444]}},{"type":"Feature","properties":{"id":"WTR-JN-018","name":null,"status":"Active","network":"water","network_label":"Water","role":"join","type_label":"Valve / fitting","from_line":"WTR-LN-013","to_line":"WTR-LN-014"},"geometry":{"type":"Point","coordinates":[-97.06446647644044,32.76315013819229]}},{"type":"Feature","properties":{"id":"WTR-JN-019","name":null,"status":"Active","network":"water","network_label":"Water","role":"join","type_label":"Valve / fitting","from_line":"WTR-LN-014","to_line":"WTR-LN-015"},"geometry":{"type":"Point","coordinates":[-97.06292152404787,32.75988205836808]}},{"type":"Feature","properties":{"id":"WTR-SRC-020","name":null,"status":"Active","network":"water","network_label":"Water","role":"source","type_label":"Treatment plant / pump"},"geometry":{"type":"Point","coordinates":[-97.0636296272278,32.767158337497186]}},{"type":"Feature","properties":{"id":"WTR-DLV-021","name":null,"status":"Active","network":"water","network_label":"Water","role":"delivery","type_label":"Service meter"},"geometry":{"type":"Point","coordinates":[-97.07388639450075,32.76262653126278]}},{"type":"Feature","properties":{"id":"ELC-DLV-022","name":null,"status":"Active","network":"electric","network_label":"Electric","role":"delivery","type_label":"Service meter"},"geometry":{"type":"Point","coordinates":[-97.07358598709108,32.767030940113244]}},{"type":"Feature","properties":{"id":"ELC-LN-023","name":null,"status":"Active","network":"electric","network_label":"Electric","role":"line","type_label":"Distribution line","length_m":442},"geometry":{"type":"LineString","coordinates":[[-97.07358598709108,32.767030940113244],[-97.07360744476318,32.76591154966029],[-97.07373619079591,32.76508102506716],[-97.07435846328735,32.764033830840845],[-97.07352161407472,32.763564394947764]]}},{"type":"Feature","properties":{"id":"ELC-LN-024","name":null,"status":"Abandoned","network":"electric","network_label":"Electric","role":"line","type_label":"Distribution line","length_m":265},"geometry":{"type":"LineString","coordinates":[[-97.07352161407472,32.763564394947764],[-97.07272768020631,32.76340189733115],[-97.07120418548584,32.76338384202212],[-97.07071065902711,32.76336578670941]]}},{"type":"Feature","properties":{"id":"ELC-LN-025","name":null,"status":"Active","network":"electric","network_label":"Electric","role":"line","type_label":"Distribution line","length_m":203},"geometry":{"type":"LineString","coordinates":[[-97.07071065902711,32.76336578670941],[-97.07071065902711,32.76251718288202],[-97.06955194473268,32.76253523836682]]}},{"type":"Feature","properties":{"id":"ELC-LN-026","name":null,"status":"Planned","network":"electric","network_label":"Electric","role":"line","type_label":"Distribution line","length_m":532},"geometry":{"type":"LineString","coordinates":[[-97.06955194473268,32.76253523836682],[-97.06955194473268,32.763239399417955],[-97.0681142807007,32.76327551009097],[-97.06820011138917,32.76156023694802],[-97.06684827804567,32.76177690485269]]}},{"type":"Feature","properties":{"id":"ELC-LN-027","name":null,"status":"Active","network":"electric","network_label":"Electric","role":"line","type_label":"Distribution line","length_m":411},"geometry":{"type":"LineString","coordinates":[[-97.06684827804567,32.76177690485269],[-97.06506729125978,32.762083850148386],[-97.0644235610962,32.76210190572107],[-97.06440210342409,32.76047688951598]]}},{"type":"Feature","properties":{"id":"ELC-JN-028","name":null,"status":"Active","network":"electric","network_label":"Electric","role":"join","type_label":"Transformer / junction","from_line":"ELC-LN-023","to_line":"ELC-LN-024"},"geometry":{"type":"Point","coordinates":[-97.07352161407472,32.763564394947764]}},{"type":"Feature","properties":{"id":"ELC-JN-029","name":null,"status":"Active","network":"electric","network_label":"Electric","role":"join","type_label":"Transformer / junction","from_line":"ELC-LN-024","to_line":"ELC-LN-025"},"geometry":{"type":"Point","coordinates":[-97.07071065902711,32.76336578670941]}},{"type":"Feature","properties":{"id":"ELC-JN-030","name":null,"status":"Active","network":"electric","network_label":"Electric","role":"join","type_label":"Transformer / junction","from_line":"ELC-LN-025","to_line":"ELC-LN-026"},"geometry":{"type":"Point","coordinates":[-97.06955194473268,32.76253523836682]}},{"type":"Feature","properties":{"id":"ELC-JN-031","name":null,"status":"Active","network":"electric","network_label":"Electric","role":"join","type_label":"Transformer / junction","from_line":"ELC-LN-026","to_line":"ELC-LN-027"},"geometry":{"type":"Point","coordinates":[-97.06684827804567,32.76177690485269]}},{"type":"Feature","properties":{"id":"OIL-LN-032","name":null,"status":"Planned","network":"oilgas","network_label":"Oil \u0026 Gas","role":"line","type_label":"Pipeline","length_m":737},"geometry":{"type":"LineString","coordinates":[[-97.07319974899293,32.76710315836877],[-97.06912279129028,32.76726564922953],[-97.0673418045044,32.7672837037513],[-97.0673418045044,32.76558656269877]]}},{"type":"Feature","properties":{"id":"OIL-LN-033","name":null,"status":"Active","network":"oilgas","network_label":"Oil \u0026 Gas","role":"line","type_label":"Pipeline","length_m":458},"geometry":{"type":"LineString","coordinates":[[-97.0673418045044,32.76558656269877],[-97.06478834152223,32.76567683697375],[-97.06483125686647,32.76471992500123],[-97.0636296272278,32.76473798003933]]}},{"type":"Feature","properties":{"id":"OIL-LN-034","name":null,"status":"Construction","network":"oilgas","network_label":"Oil \u0026 Gas","role":"line","type_label":"Pipeline","length_m":456},"geometry":{"type":"LineString","coordinates":[[-97.0636296272278,32.76473798003933],[-97.06365108489992,32.76311301194707],[-97.06255674362184,32.76313106731103],[-97.06253528594972,32.761578292626886]]}},{"type":"Feature","properties":{"id":"OIL-JN-035","name":null,"status":"Active","network":"oilgas","network_label":"Oil \u0026 Gas","role":"join","type_label":"Joint / fitting","from_line":"OIL-LN-032","to_line":"OIL-LN-033"},"geometry":{"type":"Point","coordinates":[-97.0673418045044,32.76558656269877]}},{"type":"Feature","properties":{"id":"OIL-JN-036","name":null,"status":"Active","network":"oilgas","network_label":"Oil \u0026 Gas","role":"join","type_label":"Joint / fitting","from_line":"OIL-LN-033","to_line":"OIL-LN-034"},"geometry":{"type":"Point","coordinates":[-97.0636296272278,32.76473798003933]}},{"type":"Feature","properties":{"id":"OIL-SRC-037","name":null,"status":"Active","network":"oilgas","network_label":"Oil \u0026 Gas","role":"source","type_label":"Wellhead / refinery"},"geometry":{"type":"Point","coordinates":[-97.07319974899293,32.76710315836877]}},{"type":"Feature","properties":{"id":"OIL-DLV-038","name":null,"status":"Active","network":"oilgas","network_label":"Oil \u0026 Gas","role":"delivery","type_label":"City gate / delivery"},"geometry":{"type":"Point","coordinates":[-97.06253528594972,32.761578292626886]}}]}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
@@ -3326,6 +3397,95 @@ document.addEventListener('keydown',e=>{
   if(keys[e.key]&&!e.metaKey&&!e.ctrlKey) setTool(keys[e.key]);
 });
 
+/* ---------- simple client-side auth: a soft gate, credentials live in this file ---------- */
+/* Edit this list to set the built-in accounts. It is plainly visible in the page source
+   and provides NO real security — it only keeps casual users out. */
+const USERS=[
+  {u:'admin', p:'conduit', role:'admin'}
+];
+const USERS_KEY='conduit:users', AUTH_KEY='conduit:auth';
+let authUser=null;
+function currentUsers(){
+  try{ const raw=localStorage.getItem(USERS_KEY); if(raw){ const a=JSON.parse(raw); if(Array.isArray(a)&&a.length) return a; } }catch(e){}
+  return USERS.map(x=>({...x}));
+}
+function saveUsers(arr){ try{ localStorage.setItem(USERS_KEY,JSON.stringify(arr)); }catch(e){} }
+function findUser(u){ return currentUsers().find(x=>x.u===u); }
+function isAdmin(){ return !!authUser && authUser.role==='admin'; }
+function initAuth(){
+  document.getElementById('loginForm').onsubmit=e=>{ e.preventDefault(); doLogin(); };
+  document.getElementById('signOut').onclick=signOut;
+  document.getElementById('usersBtn').onclick=openUsers;
+  document.getElementById('usersClose').onclick=()=>{ document.getElementById('usersModal').hidden=true; };
+  document.getElementById('nuAdd').onclick=addUser;
+  document.getElementById('usersCopy').onclick=copyUsersForHtml;
+  document.getElementById('usersReset').onclick=resetUsers;
+  const su=sessionStorage.getItem(AUTH_KEY), rec=su&&findUser(su);
+  if(rec) setAuthed(rec); else showLogin();
+}
+function showLogin(){
+  document.getElementById('loginOverlay').hidden=false;
+  document.getElementById('userBar').hidden=true;
+  setTimeout(()=>{ const el=document.getElementById('loginUser'); if(el) el.focus(); },40);
+}
+function doLogin(){
+  const u=document.getElementById('loginUser').value.trim(), p=document.getElementById('loginPass').value;
+  const rec=currentUsers().find(x=>x.u===u && x.p===p), err=document.getElementById('loginErr');
+  if(!rec){ err.textContent='Incorrect username or password.'; return; }
+  err.textContent=''; sessionStorage.setItem(AUTH_KEY,rec.u); setAuthed(rec);
+}
+function setAuthed(rec){
+  authUser=rec;
+  document.getElementById('loginOverlay').hidden=true;
+  document.getElementById('userBar').hidden=false;
+  document.getElementById('ubName').textContent=rec.u+' · '+(rec.role==='admin'?'Admin':'User');
+  document.getElementById('usersBtn').hidden=rec.role!=='admin';
+  document.getElementById('loginPass').value='';
+  setTimeout(()=>{ if(typeof map!=='undefined'&&map) map.invalidateSize(); },60);
+}
+function signOut(){ authUser=null; sessionStorage.removeItem(AUTH_KEY); document.getElementById('usersModal').hidden=true; showLogin(); }
+function openUsers(){ if(!isAdmin()) return; renderUsers(); document.getElementById('usersModal').hidden=false; }
+function renderUsers(){
+  const host=document.getElementById('usersList'), arr=currentUsers();
+  host.innerHTML=arr.map((x,i)=>`<div class="urow" data-i="${i}">
+    <input class="uu" value="${escapeHtml(x.u)}" placeholder="username">
+    <input class="up" value="${escapeHtml(x.p)}" placeholder="password">
+    <select class="ur"><option value="user" ${x.role!=='admin'?'selected':''}>User</option><option value="admin" ${x.role==='admin'?'selected':''}>Admin</option></select>
+    <button class="btn danger urdel" title="Remove">&times;</button>
+  </div>`).join('') || '<p class="auth-note">No users — add one below (you’ll need an admin to sign in).</p>';
+  host.querySelectorAll('.urow').forEach(row=>{
+    const i=+row.dataset.i;
+    row.querySelector('.uu').onchange=e=>updateUser(i,'u',e.target.value.trim());
+    row.querySelector('.up').onchange=e=>updateUser(i,'p',e.target.value);
+    row.querySelector('.ur').onchange=e=>updateUser(i,'role',e.target.value);
+    row.querySelector('.urdel').onclick=()=>delUser(i);
+  });
+}
+function updateUser(i,k,v){ const arr=currentUsers(); if(!arr[i]) return; arr[i][k]=v; saveUsers(arr); if(authUser){ const me=findUser(authUser.u); if(me) authUser=me; } }
+function addUser(){
+  const u=document.getElementById('nuUser').value.trim(), p=document.getElementById('nuPass').value, role=document.getElementById('nuRole').value;
+  if(!u||!p){ toast('Enter a username and a password.'); return; }
+  const arr=currentUsers();
+  if(arr.some(x=>x.u===u)){ toast('That username already exists.'); return; }
+  arr.push({u,p,role}); saveUsers(arr);
+  document.getElementById('nuUser').value=''; document.getElementById('nuPass').value='';
+  renderUsers(); toast('Added user “'+u+'”.');
+}
+function delUser(i){
+  const arr=currentUsers(), x=arr[i]; if(!x) return;
+  if(x.role==='admin' && arr.filter(a=>a.role==='admin').length<=1){ toast('Keep at least one admin account.'); return; }
+  if(!confirm('Remove user “'+x.u+'”?')) return;
+  arr.splice(i,1); saveUsers(arr); renderUsers();
+  if(authUser && authUser.u===x.u) signOut();
+}
+function copyUsersForHtml(){
+  const arr=currentUsers();
+  const code='const USERS=[\n'+arr.map(x=>`  {u:${JSON.stringify(x.u)}, p:${JSON.stringify(x.p)}, role:${JSON.stringify(x.role||'user')}}`).join(',\n')+'\n];';
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(()=>toast('Copied the USERS array — paste it over the one in the HTML.'),()=>toast('Copy failed — select and copy manually.'));
+  else toast('Clipboard unavailable in this browser.');
+}
+function resetUsers(){ if(!confirm('Reset users to the built-in list defined in the HTML?')) return; try{ localStorage.removeItem(USERS_KEY); }catch(e){} renderUsers(); toast('Reset to the built-in users.'); }
+
 window.addEventListener('load',()=>{
   const viewName=new URLSearchParams(location.search).get('view');
   if(viewName){ document.body.style.visibility='hidden'; renderLiveView(viewName); return; }
@@ -3350,6 +3510,7 @@ window.addEventListener('load',()=>{
   document.getElementById('clientRename').onclick=clientRename;
   document.getElementById('clientDelete').onclick=clientDelete;
   initClients();
+  initAuth();
 });
 </script>
 </body>
