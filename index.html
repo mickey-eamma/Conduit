@@ -29,6 +29,7 @@
     --ui:'Figtree',system-ui,-apple-system,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  [hidden]{display:none!important}
   html,body{height:100%}
   body{font-family:var(--ui);background:var(--bg);color:var(--ink);display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
   .tnum{font-variant-numeric:tabular-nums}
@@ -2846,6 +2847,7 @@ function viewerHTMLFromPayload(payload){
 <style>
   :root{--bg:#f3f1ec;--panel:#ffffff;--line:#e6e2d9;--line-soft:#efece4;--ink:#2c3038;--ink-dim:#6c7480;--ink-faint:#9aa1ac;--shadow-sm:0 2px 8px -3px rgba(40,44,52,.18);--ui:'Figtree',system-ui,-apple-system,sans-serif}
   *{box-sizing:border-box;margin:0;padding:0}
+  [hidden]{display:none!important}
   html,body{height:100%}
   body{font-family:var(--ui);background:var(--bg);color:var(--ink);display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
   header{display:flex;align-items:center;gap:14px;height:56px;flex:0 0 56px;padding:0 18px;background:var(--panel);border-bottom:1px solid var(--line);z-index:1200}
