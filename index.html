@@ -84,6 +84,10 @@
   .cx-empty{font-size:12px;color:var(--ink-faint);line-height:1.5}
   .cx-canvas{flex:1;position:relative;min-width:0}
   #cxmap{position:absolute;inset:0;background:#e8e6e0}
+  .cx-chk{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--ink-dim);margin-top:8px;cursor:pointer}
+  .cx-chk input{width:14px;height:14px;accent-color:#1f2430;cursor:pointer;flex:0 0 auto}
+  .cx-reload{width:100%;justify-content:center;margin-top:9px;font-size:12px}
+  .cx-reload.busy{opacity:.6;pointer-events:none}
   .cx-panel{flex:0 0 300px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;padding:18px}
   .cx-panel h3{font-size:12px;font-weight:600;color:var(--ink-faint);margin-bottom:6px}
   .cx-sub{font-size:12px;color:var(--ink-dim);margin-bottom:14px;line-height:1.45}
@@ -636,9 +640,11 @@
           <input id="cxUrl" type="text" placeholder="Paste ArcGIS REST URL…" autocomplete="off" spellcheck="false">
           <button class="btn" id="cxAdd">Add</button>
         </div>
+        <label class="cx-chk"><input type="checkbox" id="cxBbox"> Only load features in the current map view</label>
         <div class="ags-status" id="cxStatus"></div>
         <div class="ags-list" id="cxAgsList"></div>
-        <p class="note">Add Feature Layers to test your selected lines against &mdash; e.g. roads, rail, streams, parcels. Crossings are counted where a selected line intersects a layer feature.</p>
+        <button class="btn cx-reload" id="cxRefresh" title="Re-query every layer to the area you're now zoomed to">&#8635; Reload layers to current view</button>
+        <p class="note">Add Feature Layers to test your selected lines against &mdash; e.g. roads, rail, streams, parcels. Servers cap each query (often 1000 features), so zoom to your area and load/reload in view to get the right ones.</p>
       </section>
     </aside>
     <main class="cx-canvas"><div id="cxmap"></div></main>
@@ -1954,8 +1960,9 @@ function esriToGeoJSON(ej){
   }).filter(f=>f.geometry);
   return {type:'FeatureCollection',features:feats,exceededTransferLimit:!!ej.exceededTransferLimit};
 }
-async function agsQueryFeatures(layerUrl){
-  const q='/query?where=1%3D1&outFields=*&outSR=4326&returnGeometry=true&resultRecordCount=4000&f=';
+async function agsQueryFeatures(layerUrl,bbox){
+  const geom = bbox ? '&geometry='+bbox.join('%2C')+'&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects' : '';
+  const q='/query?where=1%3D1'+geom+'&outFields=*&outSR=4326&returnGeometry=true&resultRecordCount=4000&f=';
   // Prefer GeoJSON; fall back to Esri JSON for older servers.
   try{
     const r=await fetch(layerUrl+q+'geojson');
@@ -2077,6 +2084,7 @@ function initCrossings(){
   crossings.lineGroup=L.layerGroup().addTo(crossings.map);
   crossings.xGroup=L.layerGroup().addTo(crossings.map);
   document.getElementById('cxAdd').onclick=cxAddArcgis;
+  document.getElementById('cxRefresh').onclick=cxReloadInView;
   document.getElementById('cxUrl').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); cxAddArcgis(); } });
   document.getElementById('cxSelAll').onclick=()=>{ cxAllLines().forEach(l=>crossings.selected.add(l.code)); syncCrossings(); };
   document.getElementById('cxSelNone').onclick=()=>{ crossings.selected.clear(); syncCrossings(); };
@@ -2200,8 +2208,27 @@ function cxAddTile(url,meta){
   rec.layer=L.tileLayer(rec.tileUrl,rec.tileOpts); if(crossings.map) rec.layer.addTo(crossings.map);
   crossings.arcgisLayers.push(rec);
 }
+function cxBounds(){ const b=crossings.map.getBounds(); return [b.getWest(),b.getSouth(),b.getEast(),b.getNorth()]; }
+async function cxReloadInView(){
+  const feats=crossings.arcgisLayers.filter(r=>r.kind==='features');
+  if(!feats.length){ cxStatus('Add a Feature Layer first, then reload it to the current view.',true); return; }
+  const btn=document.getElementById('cxRefresh'); btn.classList.add('busy'); cxStatus('Reloading layers in the current view…',false);
+  const bbox=cxBounds(); let total=0, capped=false;
+  for(const rec of feats){
+    try{
+      const gj=await agsQueryFeatures(rec.url,bbox);
+      if(rec.layer&&crossings.map) crossings.map.removeLayer(rec.layer);
+      rec.geojson=gj; rec.layer=agsGeoJsonLayer(gj,rec.color);
+      if(rec.visible) rec.layer.addTo(crossings.map);
+      total+=(gj.features||[]).length; capped=capped||!!gj.exceededTransferLimit;
+    }catch(e){}
+  }
+  cxStatus(`Reloaded ${feats.length} layer${feats.length!==1?'s':''} · ${total} feature${total!==1?'s':''} in view${capped?' (a layer hit the server limit — zoom in further)':''}.`,false);
+  btn.classList.remove('busy'); syncCrossings();
+}
 async function cxAddArcgis(){
   const input=document.getElementById('cxUrl'), btn=document.getElementById('cxAdd');
+  const bbox=(document.getElementById('cxBbox')||{}).checked?cxBounds():null;
   const url=agsNormalize(input.value||'');
   if(!url){ cxStatus('Paste an ArcGIS REST endpoint URL first.',true); return; }
   if(!/(feature|map|image)server/i.test(url)){ cxStatus('That doesn’t look like an ArcGIS REST endpoint.',true); return; }
@@ -2209,13 +2236,13 @@ async function cxAddArcgis(){
   try{
     const meta=await agsFetchJson(url);
     if(meta.geometryType || (typeof meta.type==='string'&&/layer/i.test(meta.type))){
-      const gj=await agsQueryFeatures(url); const n=cxPushFeatureLayer(meta.name||url.split('/').slice(-2).join(' '),url,gj);
-      cxStatus(`Added “${meta.name||'layer'}” · ${n} feature${n!==1?'s':''}${gj.exceededTransferLimit?' (first page)':''}.`,false);
+      const gj=await agsQueryFeatures(url,bbox); const n=cxPushFeatureLayer(meta.name||url.split('/').slice(-2).join(' '),url,gj);
+      cxStatus(`Added “${meta.name||'layer'}” · ${n} feature${n!==1?'s':''}${bbox?' in view':''}${gj.exceededTransferLimit?' (capped at server limit)':''}.`,false);
     } else if(meta.singleFusedMapCache){ cxAddTile(url,meta); cxStatus(`Added tiled service “${meta.mapName||meta.name||'layer'}” — raster tiles have no geometry, so crossings can’t be counted.`,false); }
     else if(Array.isArray(meta.layers)&&meta.layers.length){
       const subs=meta.layers.filter(l=>!(l.subLayerIds&&l.subLayerIds.length)); if(!subs.length) throw new Error('No drawable layers in this service.');
       let added=0,total=0;
-      for(const l of subs){ try{ const lurl=url+'/'+l.id; const gj=await agsQueryFeatures(lurl); total+=cxPushFeatureLayer(l.name||('Layer '+l.id),lurl,gj); added++; }catch(e){} }
+      for(const l of subs){ try{ const lurl=url+'/'+l.id; const gj=await agsQueryFeatures(lurl,bbox); total+=cxPushFeatureLayer(l.name||('Layer '+l.id),lurl,gj); added++; }catch(e){} }
       if(!added) throw new Error('Couldn’t load any layers from this service.');
       cxStatus(`Added ${added} layer${added!==1?'s':''} · ${total} feature${total!==1?'s':''}.`,false);
     } else throw new Error('Unsupported endpoint — point to a Feature Layer or service.');
