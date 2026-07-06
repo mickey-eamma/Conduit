@@ -2742,16 +2742,26 @@ function renderWidgetEl(w){
 }
 
 /* ---------- deploy: composed read-only asset map in a new tab ---------- */
-function buildViewerHTML(clientName){
-  const proj=serializeProject();
+// The Map Builder composition (symbology, widgets, basemap, framing, arcgis) at deploy time.
+function currentComposition(){
   const view=builder.map?{center:[builder.map.getCenter().lat,builder.map.getCenter().lng],zoom:builder.map.getZoom()}:null;
   const arcgis=builder.arcgisLayers.map(r=> r.kind==='tiles'
     ? {kind:'tiles',title:r.title,visible:r.visible,tileUrl:r.tileUrl,tileOpts:r.tileOpts}
     : {kind:'features',title:r.title,color:r.color,visible:r.visible,geojson:r.geojson});
-  const payload={client:clientName,generated:new Date().toLocaleString(),networks:proj.networks,
-    layers:builder.layers,basemap:builder.basemap,widgets:builder.widgets,view,arcgis};
+  return {layers:builder.layers,basemap:builder.basemap,widgets:builder.widgets,view,arcgis};
+}
+function makePayload(clientName,networks,comp){
+  comp=comp||{};
+  return {client:clientName,generated:comp.generated||new Date().toLocaleString(),networks,
+    layers:comp.layers||{telecom:defaultLayerCfg('telecom'),water:defaultLayerCfg('water'),electric:defaultLayerCfg('electric'),oilgas:defaultLayerCfg('oilgas')},
+    basemap:comp.basemap||'gray',widgets:comp.widgets||[],view:comp.view||null,arcgis:comp.arcgis||[]};
+}
+function buildViewerHTML(clientName){
+  return viewerHTMLFromPayload(makePayload(clientName,serializeProject().networks,currentComposition()));
+}
+function viewerHTMLFromPayload(payload){
   const dataJSON=JSON.stringify(payload).replace(/</g,'\\u003c');
-  const title=escapeHtml(clientName)+' — Asset Map';
+  const title=escapeHtml(payload.client)+' — Asset Map';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3260,21 +3270,40 @@ if(!all.length){var e=document.createElement('div');e.className='empty';e.innerH
 </body>
 </html>`;
 }
-function deployAssetMap(){
+const DEPLOY_PREFIX='conduit:deploy:';
+function liveUrlFor(name){ return location.origin+location.pathname+'?view='+encodeURIComponent(name); }
+// Live view mode: ?view=<client> renders the read-only map from the currently saved client each load.
+async function renderLiveView(name){
+  const clients=await loadClients(), proj=clients[name];
+  if(!proj){
+    document.documentElement.innerHTML='<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>'+escapeHtml(name)+' — Asset Map</title></head><body style="font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f3f1ec;color:#2c3038;text-align:center;padding:24px"><div><h2 style="margin:0 0 8px">No saved data for &ldquo;'+escapeHtml(name)+'&rdquo;.</h2><p style="color:#6c7480;max-width:420px">A live asset map reads from the browser where the client was saved. Open this link in that browser, or deploy again after saving the client.</p></div></body>';
+    return;
+  }
+  let comp={}; try{ const raw=await Store.get(DEPLOY_PREFIX+name); if(raw) comp=JSON.parse(raw); }catch(e){}
+  const html=viewerHTMLFromPayload(makePayload(name,proj.networks,comp));
+  document.open(); document.write(html); document.close();
+}
+async function deployAssetMap(){
   const total=ORDER.reduce((s,id)=>s+state.data[id].features.length,0);
   if(!total){ toast('Nothing to deploy — add some features in Asset Manager first.'); return; }
-  const clientName=currentClient||'Untitled Project';
-  const html=buildViewerHTML(clientName);
-  const url=URL.createObjectURL(new Blob([html],{type:'text/html'}));
-  const w=window.open(url,'_blank');
-  if(!w){
-    const a=document.createElement('a');
-    a.href=url; a.download=clientName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-asset-map.html'; a.click();
-    toast('Pop-up blocked — downloaded the asset map instead.');
-  } else {
-    toast('Asset map deployed for '+clientName);
+  if(currentClient){
+    // Persist current geometry to the client + the composition, then open the stable live URL.
+    const clients=await loadClients();
+    clients[currentClient]={...serializeProject(),savedAt:Date.now()};
+    await persistClients(clients);
+    try{ await Store.set(DEPLOY_PREFIX+currentClient, JSON.stringify({...currentComposition(),generated:'live · updated '+new Date().toLocaleString()})); }catch(e){}
+    refreshClientSelect(clients);
+    const url=liveUrlFor(currentClient), w=window.open(url,'_blank');
+    try{ await navigator.clipboard.writeText(url); }catch(e){}
+    toast(w?'Live asset map opened (link copied). Edit → Save → refresh it to update.':'Live link copied — open it: '+url);
+    return;
   }
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  // No client selected → a self-contained static snapshot (shareable, but frozen).
+  const u=URL.createObjectURL(new Blob([buildViewerHTML('Untitled Project')],{type:'text/html'}));
+  const w=window.open(u,'_blank');
+  if(!w){ const a=document.createElement('a'); a.href=u; a.download='asset-map.html'; a.click(); toast('Pop-up blocked — downloaded a snapshot. Save as a client for a live, updatable link.'); }
+  else toast('Deployed a static snapshot. Save this as a client to get a live link that updates on save.');
+  setTimeout(()=>URL.revokeObjectURL(u),60000);
 }
 
 document.addEventListener('keydown',e=>{
@@ -3290,6 +3319,8 @@ document.addEventListener('keydown',e=>{
 });
 
 window.addEventListener('load',()=>{
+  const viewName=new URLSearchParams(location.search).get('view');
+  if(viewName){ document.body.style.visibility='hidden'; renderLiveView(viewName); return; }
   document.documentElement.style.setProperty('--accent',UTILS[state.util].color);
   document.getElementById('stSwatch').style.background=UTILS[state.util].color;
   initMap(); buildRail(); buildToolbar();
