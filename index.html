@@ -62,6 +62,49 @@
   body.builder-mode .workspace{display:none}
   body.builder-mode #exportBtn{display:none}
 
+  /* ---- Crossings ---- */
+  body.crossings-mode .workspace{display:none}
+  body.crossings-mode #exportBtn{display:none}
+  .crossings{display:none;flex:1;min-height:0}
+  body.crossings-mode .crossings{display:flex}
+  .cx-side{width:288px;flex:0 0 288px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:16px 15px 26px}
+  .cx-side section{margin-bottom:20px}
+  .cx-side h3{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-faint);margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .cx-side h3 .cd{font-weight:600;color:var(--accent);text-transform:none;letter-spacing:0}
+  .cx-side .note{font-size:12px;color:var(--ink-faint);line-height:1.45;margin-top:10px}
+  .cx-selbar{display:flex;gap:6px;margin-bottom:8px}
+  .cx-selbar button{flex:1;font-family:var(--ui);font-size:11.5px;font-weight:600;color:var(--ink-dim);background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:5px 0;cursor:pointer}
+  .cx-selbar button:hover{color:var(--ink);border-color:#d4cfc3}
+  .cx-net{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin:11px 0 3px}
+  .cx-lrow{display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer}
+  .cx-lrow input{width:15px;height:15px;accent-color:#1f2430;cursor:pointer;flex:0 0 auto}
+  .cx-lrow .lc{width:9px;height:9px;border-radius:2px;flex:0 0 9px}
+  .cx-lrow .nm{flex:1;font-size:12.5px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cx-lrow .cd{font-size:10.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+  .cx-empty{font-size:12px;color:var(--ink-faint);line-height:1.5}
+  .cx-canvas{flex:1;position:relative;min-width:0}
+  #cxmap{position:absolute;inset:0;background:#e8e6e0}
+  .cx-panel{flex:0 0 300px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;padding:18px}
+  .cx-panel h3{font-size:12px;font-weight:600;color:var(--ink-faint);margin-bottom:6px}
+  .cx-sub{font-size:12px;color:var(--ink-dim);margin-bottom:14px;line-height:1.45}
+  .cx-total{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+  .cx-total .v{font-size:26px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .cx-total .l{font-size:12px;font-weight:600;color:var(--ink-dim);margin-top:2px}
+  .cx-lyr{border:1px solid var(--line);border-radius:12px;margin-bottom:9px;overflow:hidden}
+  .cx-lyr-head{display:flex;align-items:center;gap:9px;padding:11px 12px;cursor:pointer}
+  .cx-lyr-head:hover{background:var(--panel-2)}
+  .cx-lyr .sw{width:11px;height:11px;border-radius:3px;flex:0 0 11px}
+  .cx-lyr .nm{flex:1;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cx-lyr .ct{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  .cx-lyr .ct.zero{color:var(--ink-faint)}
+  .cx-lyr .na{font-size:11px;font-weight:600;color:var(--ink-faint)}
+  .cx-lyr-body{display:none;padding:2px 12px 10px;border-top:1px solid var(--line-soft)}
+  .cx-lyr.open .cx-lyr-body{display:block}
+  .cx-br{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;padding:4px 0}
+  .cx-br .bn{color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cx-br .bv{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;flex:0 0 auto}
+  @media(max-width:900px){.cx-side{flex-basis:230px;width:230px}.cx-panel{flex-basis:240px}}
+
   /* ---- Map Builder ---- */
   .builder{display:none;flex:1;min-height:0}
   body.builder-mode .builder{display:flex}
@@ -471,6 +514,7 @@
     <div class="brand"><span class="mark"></span><span class="nm">Conduit</span><span class="sub">Utility network mapping</span></div>
     <div class="main-tabs">
       <button class="mt active" data-mview="assets">Asset Manager</button>
+      <button class="mt" data-mview="crossings">Crossings</button>
       <button class="mt" data-mview="builder">Map Builder</button>
     </div>
     <div class="app-actions">
@@ -577,6 +621,32 @@
         Deploy Asset Map
       </button>
     </main>
+  </div>
+
+  <div class="crossings" id="crossings">
+    <aside class="cx-side">
+      <section>
+        <h3>Your lines <span class="cd" id="cxSelCount"></span></h3>
+        <div class="cx-selbar"><button id="cxSelAll">Select all</button><button id="cxSelNone">Clear</button></div>
+        <div id="cxLineList"></div>
+      </section>
+      <section>
+        <h3>ArcGIS layers</h3>
+        <div class="ags-add">
+          <input id="cxUrl" type="text" placeholder="Paste ArcGIS REST URL…" autocomplete="off" spellcheck="false">
+          <button class="btn" id="cxAdd">Add</button>
+        </div>
+        <div class="ags-status" id="cxStatus"></div>
+        <div class="ags-list" id="cxAgsList"></div>
+        <p class="note">Add Feature Layers to test your selected lines against &mdash; e.g. roads, rail, streams, parcels. Crossings are counted where a selected line intersects a layer feature.</p>
+      </section>
+    </aside>
+    <main class="cx-canvas"><div id="cxmap"></div></main>
+    <aside class="cx-panel">
+      <h3>Crossing summary</h3>
+      <div class="cx-sub">How many times your selected lines cross each ArcGIS layer.</div>
+      <div id="cxSummary"></div>
+    </aside>
   </div>
 
   <div class="dash" id="dash" hidden></div>
@@ -1824,11 +1894,16 @@ const WIDGET_DEFS={
 function setMainView(v){
   mainView=v;
   document.body.classList.toggle('builder-mode',v==='builder');
+  document.body.classList.toggle('crossings-mode',v==='crossings');
   document.querySelectorAll('.mt').forEach(b=>b.classList.toggle('active',b.dataset.mview===v));
   if(v==='builder'){
     document.getElementById('dash').hidden=true;
     if(!builder.map) initBuilder();
     setTimeout(()=>{ builder.map.invalidateSize(); syncBuilder(); },60);
+  } else if(v==='crossings'){
+    document.getElementById('dash').hidden=true;
+    if(!crossings.map){ initCrossings(); setTimeout(()=>{ crossings.map.invalidateSize(); syncCrossings(); cxFit(); },60); }
+    else setTimeout(()=>{ crossings.map.invalidateSize(); syncCrossings(); },60);
   } else {
     const vt=document.querySelector('.vt.active');
     setView(vt?vt.dataset.view:'map');
@@ -1992,6 +2067,176 @@ function removeAgsLayer(rec){
   builder.arcgisLayers=builder.arcgisLayers.filter(r=>r!==rec);
   renderAgsList();
 }
+
+/* ---------- Crossings: selected lines × ArcGIS layer intersection analysis ---------- */
+const crossings={ map:null, baseLayers:[], arcgisLayers:[], nextA:1,
+  selected:new Set(), lineGroup:null, xGroup:null, expanded:{} };
+function initCrossings(){
+  crossings.map=L.map('cxmap',{zoomControl:true}).setView([32.74,-97.05],12);
+  BASEMAPS.gray.layers.forEach(t=>crossings.baseLayers.push(L.tileLayer(t[0],t[1]).addTo(crossings.map)));
+  crossings.lineGroup=L.layerGroup().addTo(crossings.map);
+  crossings.xGroup=L.layerGroup().addTo(crossings.map);
+  document.getElementById('cxAdd').onclick=cxAddArcgis;
+  document.getElementById('cxUrl').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); cxAddArcgis(); } });
+  document.getElementById('cxSelAll').onclick=()=>{ cxAllLines().forEach(l=>crossings.selected.add(l.code)); syncCrossings(); };
+  document.getElementById('cxSelNone').onclick=()=>{ crossings.selected.clear(); syncCrossings(); };
+}
+function cxAllLines(){
+  const out=[];
+  ORDER.forEach(id=>state.data[id].features.forEach(f=>{ if(f.type==='line') out.push({util:id,code:f.code,name:f.props.name||f.code,latlngs:f.latlngs,color:UTILS[id].color}); }));
+  return out;
+}
+function cxToggleLine(code){ if(crossings.selected.has(code)) crossings.selected.delete(code); else crossings.selected.add(code); syncCrossings(); }
+/* --- planar segment intersection (x=lng, y=lat); returns the crossing point or null --- */
+function cxSegPoint(a,b,c,d){
+  const rx=b[0]-a[0], ry=b[1]-a[1], sx=d[0]-c[0], sy=d[1]-c[1];
+  const den=rx*sy-ry*sx; if(den===0) return null;
+  const t=((c[0]-a[0])*sy-(c[1]-a[1])*sx)/den, u=((c[0]-a[0])*ry-(c[1]-a[1])*rx)/den;
+  if(t>0&&t<1&&u>0&&u<1) return [a[0]+t*rx, a[1]+t*ry];
+  return null;
+}
+function cxGeomPaths(g){
+  if(!g) return [];
+  if(g.type==='LineString') return [g.coordinates];
+  if(g.type==='MultiLineString') return g.coordinates;
+  if(g.type==='Polygon') return g.coordinates;                          // rings (closed) = boundary
+  if(g.type==='MultiPolygon'){ const o=[]; g.coordinates.forEach(p=>p.forEach(r=>o.push(r))); return o; }
+  return [];                                                            // points can't be "crossed"
+}
+function cxCountLine(lineLL,geojson){
+  const A=lineLL.map(ll=>[ll.lng,ll.lat]); let count=0; const pts=[];
+  (geojson.features||[]).forEach(f=>{
+    cxGeomPaths(f.geometry).forEach(path=>{
+      for(let i=1;i<A.length;i++) for(let j=1;j<path.length;j++){
+        const p=cxSegPoint(A[i-1],A[i],path[j-1],path[j]);
+        if(p){ count++; pts.push(p); }
+      }
+    });
+  });
+  return {count,pts};
+}
+function computeCrossings(){
+  const sel=cxAllLines().filter(l=>crossings.selected.has(l.code));
+  crossings.arcgisLayers.forEach(rec=>{
+    if(rec.kind!=='features'){ rec._x={na:true,total:0,perLine:{},pts:[]}; return; }
+    let total=0; const perLine={}, pts=[];
+    sel.forEach(l=>{ const r=cxCountLine(l.latlngs,rec.geojson); if(r.count){ perLine[l.code]=r.count; total+=r.count; r.pts.forEach(p=>pts.push(p)); } });
+    rec._x={na:false,total,perLine,pts};
+  });
+}
+function syncCrossings(){
+  if(!crossings.map) return;
+  const codes=new Set(cxAllLines().map(l=>l.code));
+  [...crossings.selected].forEach(c=>{ if(!codes.has(c)) crossings.selected.delete(c); });   // prune deleted lines
+  crossings.lineGroup.clearLayers();
+  cxAllLines().forEach(l=>{
+    const on=crossings.selected.has(l.code);
+    const pl=L.polyline(l.latlngs,{color:on?l.color:'#9aa1ac',weight:on?4.5:2,opacity:on?.95:.5});
+    pl.on('click',()=>cxToggleLine(l.code));
+    pl.bindTooltip(l.name,{className:'feat-tip',direction:'top',opacity:1});
+    pl.addTo(crossings.lineGroup);
+  });
+  computeCrossings();
+  crossings.xGroup.clearLayers();
+  crossings.arcgisLayers.forEach(rec=>{ if(rec.kind!=='features'||!rec.visible) return; ((rec._x&&rec._x.pts)||[]).forEach(p=>{
+    L.circleMarker([p[1],p[0]],{radius:4.5,color:'#fff',weight:1.5,fillColor:rec.color,fillOpacity:1,interactive:false}).addTo(crossings.xGroup);
+  }); });
+  renderCxLineList(); cxRenderAgsList(); renderCxSummary();
+  const n=crossings.selected.size; document.getElementById('cxSelCount').textContent=n?n+' selected':'';
+}
+function cxFit(){ const all=[]; cxAllLines().forEach(l=>l.latlngs.forEach(ll=>all.push(ll))); if(all.length) crossings.map.fitBounds(L.latLngBounds(all).pad(0.25)); }
+function renderCxLineList(){
+  const host=document.getElementById('cxLineList'); if(!host) return; host.innerHTML=''; let any=false;
+  ORDER.forEach(id=>{
+    const lines=state.data[id].features.filter(f=>f.type==='line'); if(!lines.length) return; any=true;
+    const h=document.createElement('div'); h.className='cx-net'; h.textContent=UTILS[id].label; host.appendChild(h);
+    lines.forEach(f=>{
+      const row=document.createElement('label'); row.className='cx-lrow';
+      row.innerHTML=`<input type="checkbox" ${crossings.selected.has(f.code)?'checked':''}><span class="lc" style="background:${UTILS[id].color}"></span><span class="nm">${escapeHtml(f.props.name||f.code)}</span><span class="cd">${escapeHtml(f.code)}</span>`;
+      row.querySelector('input').onchange=()=>cxToggleLine(f.code);
+      host.appendChild(row);
+    });
+  });
+  if(!any) host.innerHTML='<p class="cx-empty">No lines in this client yet — draw some in Asset Manager first.</p>';
+}
+function renderCxSummary(){
+  const host=document.getElementById('cxSummary'); if(!host) return;
+  const selN=crossings.selected.size;
+  if(!selN){ host.innerHTML='<p class="cx-empty">Select one or more of your lines to analyze.</p>'; return; }
+  if(!crossings.arcgisLayers.length){ host.innerHTML='<p class="cx-empty">Add an ArcGIS layer to test crossings against.</p>'; return; }
+  const nameByCode={}; cxAllLines().forEach(l=>nameByCode[l.code]=l.name);
+  const grand=crossings.arcgisLayers.reduce((s,r)=>s+((r._x&&r._x.total)||0),0);
+  let html=`<div class="cx-total"><div class="v">${grand}</div><div class="l">total crossings · ${selN} line${selN!==1?'s':''} selected</div></div>`;
+  crossings.arcgisLayers.forEach(rec=>{
+    const x=rec._x||{total:0,perLine:{},na:rec.kind!=='features'};
+    const open=crossings.expanded[rec.id], codesHit=Object.keys(x.perLine||{});
+    html+=`<div class="cx-lyr${open?' open':''}" data-id="${rec.id}"><div class="cx-lyr-head">
+        <span class="sw" style="background:${rec.color}"></span>
+        <span class="nm">${escapeHtml(rec.title)}</span>
+        ${x.na?'<span class="na">raster · n/a</span>':`<span class="ct${x.total?'':' zero'}">${x.total}</span>`}</div>`;
+    if(!x.na){
+      let body='';
+      if(codesHit.length) codesHit.forEach(code=>{ body+=`<div class="cx-br"><span class="bn">${escapeHtml(nameByCode[code]||code)}</span><span class="bv">${x.perLine[code]}</span></div>`; });
+      else body='<div class="cx-br"><span class="bn">No crossings with selected lines</span><span class="bv">0</span></div>';
+      html+=`<div class="cx-lyr-body">${body}</div>`;
+    }
+    html+='</div>';
+  });
+  host.innerHTML=html;
+  host.querySelectorAll('.cx-lyr').forEach(el=>{ const id=el.dataset.id; el.querySelector('.cx-lyr-head').onclick=()=>{ crossings.expanded[id]=!crossings.expanded[id]; el.classList.toggle('open',crossings.expanded[id]); }; });
+}
+/* --- crossings ArcGIS loader (reuses the generic ags fetch helpers) --- */
+function cxStatus(msg,isErr){ const el=document.getElementById('cxStatus'); if(!el) return; el.textContent=msg||''; el.classList.toggle('err',!!isErr); el.classList.toggle('show',!!msg); }
+function cxPushFeatureLayer(name,url,gj){
+  const color=AGS_PALETTE[(crossings.nextA-1)%AGS_PALETTE.length];
+  const rec={id:'c'+(crossings.nextA++),kind:'features',url,title:name,color,visible:true,geojson:gj};
+  rec.layer=agsGeoJsonLayer(gj,color); if(crossings.map) rec.layer.addTo(crossings.map);
+  crossings.arcgisLayers.push(rec);
+  try{ const b=rec.layer.getBounds(); if(b.isValid()) crossings.map.fitBounds(b.pad(0.2)); }catch(e){}
+  return (gj.features||[]).length;
+}
+function cxAddTile(url,meta){
+  const rec={id:'c'+(crossings.nextA++),kind:'tiles',url,title:meta.mapName||meta.name||'Tiled service',color:'#64748b',visible:true,tileUrl:url+'/tile/{z}/{y}/{x}',tileOpts:{maxZoom:19,attribution:meta.copyrightText||'ArcGIS'}};
+  rec.layer=L.tileLayer(rec.tileUrl,rec.tileOpts); if(crossings.map) rec.layer.addTo(crossings.map);
+  crossings.arcgisLayers.push(rec);
+}
+async function cxAddArcgis(){
+  const input=document.getElementById('cxUrl'), btn=document.getElementById('cxAdd');
+  const url=agsNormalize(input.value||'');
+  if(!url){ cxStatus('Paste an ArcGIS REST endpoint URL first.',true); return; }
+  if(!/(feature|map|image)server/i.test(url)){ cxStatus('That doesn’t look like an ArcGIS REST endpoint.',true); return; }
+  btn.classList.add('busy'); cxStatus('Loading…',false);
+  try{
+    const meta=await agsFetchJson(url);
+    if(meta.geometryType || (typeof meta.type==='string'&&/layer/i.test(meta.type))){
+      const gj=await agsQueryFeatures(url); const n=cxPushFeatureLayer(meta.name||url.split('/').slice(-2).join(' '),url,gj);
+      cxStatus(`Added “${meta.name||'layer'}” · ${n} feature${n!==1?'s':''}${gj.exceededTransferLimit?' (first page)':''}.`,false);
+    } else if(meta.singleFusedMapCache){ cxAddTile(url,meta); cxStatus(`Added tiled service “${meta.mapName||meta.name||'layer'}” — raster tiles have no geometry, so crossings can’t be counted.`,false); }
+    else if(Array.isArray(meta.layers)&&meta.layers.length){
+      const subs=meta.layers.filter(l=>!(l.subLayerIds&&l.subLayerIds.length)); if(!subs.length) throw new Error('No drawable layers in this service.');
+      let added=0,total=0;
+      for(const l of subs){ try{ const lurl=url+'/'+l.id; const gj=await agsQueryFeatures(lurl); total+=cxPushFeatureLayer(l.name||('Layer '+l.id),lurl,gj); added++; }catch(e){} }
+      if(!added) throw new Error('Couldn’t load any layers from this service.');
+      cxStatus(`Added ${added} layer${added!==1?'s':''} · ${total} feature${total!==1?'s':''}.`,false);
+    } else throw new Error('Unsupported endpoint — point to a Feature Layer or service.');
+    input.value=''; syncCrossings();
+  }catch(err){ cxStatus('Couldn’t add layer: '+(err&&err.message||err),true); }
+  finally{ btn.classList.remove('busy'); }
+}
+function cxRenderAgsList(){
+  const host=document.getElementById('cxAgsList'); if(!host) return; host.innerHTML='';
+  crossings.arcgisLayers.forEach(rec=>{
+    const count=rec.kind==='features'?((rec.geojson.features||[]).length+' ft'):'tiles';
+    const row=document.createElement('div'); row.className='ags-row'+(rec.visible?' on':'');
+    row.innerHTML=`<span class="ags-check"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-6"/></svg></span><span class="ags-sw" style="background:${rec.color}"></span><span class="ags-nm" title="${escapeHtml(rec.url)}">${escapeHtml(rec.title)}</span><span class="ags-ct">${count}</span><button class="ags-del" title="Remove layer">&times;</button>`;
+    row.querySelector('.ags-check').onclick=()=>cxToggleAgs(rec);
+    row.querySelector('.ags-nm').onclick=()=>cxToggleAgs(rec);
+    row.querySelector('.ags-del').onclick=()=>cxRemoveAgs(rec);
+    host.appendChild(row);
+  });
+}
+function cxToggleAgs(rec){ rec.visible=!rec.visible; if(rec.visible) rec.layer.addTo(crossings.map); else crossings.map.removeLayer(rec.layer); syncCrossings(); }
+function cxRemoveAgs(rec){ if(rec.layer) crossings.map.removeLayer(rec.layer); crossings.arcgisLayers=crossings.arcgisLayers.filter(r=>r!==rec); syncCrossings(); }
 
 /* ---------- layers tab: Map Viewer style layer list ---------- */
 const EYE_ON='<svg viewBox="0 0 24 24"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.7"/></svg>';
