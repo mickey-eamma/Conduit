@@ -333,6 +333,10 @@
   .import-btn:hover{background:var(--panel-2)}
   .import-clear{box-shadow:var(--shadow);font-size:12px}
   .import-clear:hover{color:#c2334d;border-color:#f0c2cc;background:#fdf3f5}
+  .import-net{font-family:var(--ui);font-size:12px;font-weight:600;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 9px;box-shadow:var(--shadow);cursor:pointer}
+  .import-net:focus{outline:none;border-color:var(--accent)}
+  .import-all{box-shadow:var(--shadow);font-size:12px;color:#fff;background:var(--accent);border-color:var(--accent)}
+  .import-all:hover{filter:brightness(1.06)}
   .hint{position:absolute;bottom:46px;left:50%;transform:translateX(-50%);z-index:1000;font-size:12.5px;font-weight:500;color:var(--ink-dim);background:var(--panel);border:1px solid var(--line);padding:8px 15px;border-radius:22px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:9px;max-width:90%}
   .hint .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:0 0 auto}
   .hint b{color:var(--ink);font-weight:600}
@@ -551,8 +555,10 @@
       </div>
       <div id="map"></div>
       <div class="import-ctl">
-        <button class="btn import-btn" id="importBtn" title="Import a KMZ/KML and trace its lines into this network">&#8613; Import KMZ</button>
+        <button class="btn import-btn" id="importBtn" title="Import a KMZ/KML and trace its lines into a network">&#8613; Import KMZ</button>
         <input type="file" id="importFile" accept=".kmz,.kml,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml" hidden>
+        <select class="import-net" id="importNet" title="Add imported lines to this network" hidden></select>
+        <button class="btn import-all" id="importAll" hidden>Add all (<span id="importCount2">0</span>)</button>
         <button class="btn import-clear" id="importClear" hidden>Clear import (<span id="importCount">0</span>)</button>
       </div>
       <div class="basemap-note" id="bmNote">
@@ -845,20 +851,21 @@ function isVertex(ll){return draftLatLngs.some(v=>v.lat===ll.lat&&v.lng===ll.lng
 function finishLine(){if(draftLatLngs.length>=2) commitLine(draftLatLngs.slice());cancelLine();}
 function cancelLine(){draftLatLngs=[];if(draftLayer){map.removeLayer(draftLayer);draftLayer=null;}if(draftVerts){map.removeLayer(draftVerts);draftVerts=null;}}
 
-function newFeature(type){
-  const code=`${UTILS[state.util].abbr}-${ROLEABBR[type]}-${String(state.uid).padStart(3,'0')}`; state.uid++;
+function newFeature(type,util){
+  util=util||state.util;
+  const code=`${UTILS[util].abbr}-${ROLEABBR[type]}-${String(state.uid).padStart(3,'0')}`; state.uid++;
   const props={name:'',status:'Active'};
-  if(type==='line' && state.util==='telecom'){ props.fiberCount=48; props.placement='Aerial'; }
+  if(type==='line' && util==='telecom'){ props.fiberCount=48; props.placement='Aerial'; }
   if(type==='join'){
-    if(state.util==='telecom'){ props.parentLine=''; props.branches=[]; props.splices=[]; }
-    else if(isFlowNet(state.util)){ props.fromLine=''; props.toLines=[]; }
+    if(util==='telecom'){ props.parentLine=''; props.branches=[]; props.splices=[]; }
+    else if(isFlowNet(util)){ props.fromLine=''; props.toLines=[]; }
     else { props.fromLine=''; props.toLine=''; }
   }
-  return {id:state.uid,type,util:state.util,code,props};
+  return {id:state.uid,type,util,code,props};
 }
 
-function commitLine(latlngs,name){
-  const feat=newFeature('line'); if(name) feat.props.name=name; feat.latlngs=latlngs;
+function commitLine(latlngs,name,util,defer){
+  const feat=newFeature('line',util); if(name) feat.props.name=name; feat.latlngs=latlngs;
   const color=UTILS[feat.util].color;
   const casing=L.polyline(latlngs,{color:'#ffffff',weight:7,opacity:.9});
   const main=L.polyline(latlngs,{color,weight:3.5,opacity:.95});
@@ -866,7 +873,7 @@ function commitLine(latlngs,name){
   feat.layer=L.layerGroup([casing,main]).addTo(state.data[feat.util].group);
   main.on('click',ev=>onFeatureClick(feat,ev));
   main.bindTooltip(tipText(feat),{className:'feat-tip',direction:'top',opacity:1});
-  state.data[feat.util].features.push(feat); applyStatusStyle(feat); afterChange();
+  state.data[feat.util].features.push(feat); applyStatusStyle(feat); if(!defer) afterChange();
 }
 
 /* ---------- KMZ/KML import: trace lines into the current network ---------- */
@@ -927,19 +934,30 @@ async function parseImportFile(file){
   const text = nm.endsWith('.kml') ? new TextDecoder().decode(new Uint8Array(buf)) : await extractKmlFromZip(buf);
   return parseKmlLines(text);
 }
+function importTarget(){ const s=document.getElementById('importNet'); return (s&&s.value)||state.util; }
 function updateImportUI(){
-  const clr=document.getElementById('importClear'), cnt=document.getElementById('importCount');
-  if(cnt) cnt.textContent=importItems.length;
-  if(clr) clr.hidden=importItems.length===0;
+  const on=importItems.length>0, n=importItems.length;
+  const cnt=document.getElementById('importCount'), cnt2=document.getElementById('importCount2'),
+        clr=document.getElementById('importClear'), net=document.getElementById('importNet'), all=document.getElementById('importAll');
+  if(cnt) cnt.textContent=n; if(cnt2) cnt2.textContent=n;
+  if(clr) clr.hidden=!on; if(net) net.hidden=!on; if(all) all.hidden=!on;
 }
 function clearImport(){ if(importGroup){map.removeLayer(importGroup);importGroup=null;} importItems=[]; updateImportUI(); }
 function importOne(rec){
-  commitLine(rec.item.latlngs.map(ll=>L.latLng(ll.lat,ll.lng)), rec.item.name||'');
+  const util=importTarget();
+  commitLine(rec.item.latlngs.map(ll=>L.latLng(ll.lat,ll.lng)), rec.item.name||'', util);
   importGroup.removeLayer(rec.pl); importItems=importItems.filter(x=>x!==rec); updateImportUI();
-  toast(`Added “${rec.item.name||'line'}” to ${UTILS[state.util].label}.`);
+  toast(`Added “${rec.item.name||'line'}” to ${UTILS[util].label}.`);
+}
+function importAll(){
+  const util=importTarget(), n=importItems.length; if(!n) return;
+  importItems.forEach(rec=>commitLine(rec.item.latlngs.map(ll=>L.latLng(ll.lat,ll.lng)), rec.item.name||'', util, true));
+  clearImport(); afterChange();
+  toast(`Added ${n} line${n!==1?'s':''} to ${UTILS[util].label}.`);
 }
 function renderImport(lines){
   clearImport();
+  const net=document.getElementById('importNet'); if(net) net.value=state.util;   // default target = current network
   importGroup=L.layerGroup().addTo(map);
   const all=[];
   lines.forEach(item=>{
@@ -3197,6 +3215,8 @@ window.addEventListener('load',()=>{
   document.getElementById('importBtn').onclick=()=>document.getElementById('importFile').click();
   document.getElementById('importFile').onchange=e=>{ const f=e.target.files&&e.target.files[0]; onImportFile(f); e.target.value=''; };
   document.getElementById('importClear').onclick=clearImport;
+  document.getElementById('importAll').onclick=importAll;
+  document.getElementById('importNet').innerHTML=ORDER.map(id=>`<option value="${id}">Add to ${UTILS[id].label}</option>`).join('');
   document.querySelectorAll('.mt').forEach(b=>b.onclick=()=>setMainView(b.dataset.mview));
   document.getElementById('bmClose').onclick=hideBasemapNote;
   document.querySelectorAll('.vt').forEach(b=>b.onclick=()=>setView(b.dataset.view));
