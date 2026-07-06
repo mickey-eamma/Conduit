@@ -364,6 +364,8 @@
   .btn.matrix:disabled{opacity:.5;cursor:not-allowed;filter:none}
   .btn.flow{width:100%;justify-content:center;margin-top:4px;color:#fff;background:var(--accent);border-color:var(--accent);font-size:12.5px}
   .btn.flow:hover{filter:brightness(1.06)}
+  .btn.flow.up{color:var(--accent);background:#fff}
+  .btn.flow.up:hover{background:var(--panel-2);filter:none}
 
   .fiber-modal{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(28,32,38,.46);backdrop-filter:blur(2px)}
   .fiber-dialog{background:#fff;width:min(640px,95vw);max-height:88vh;border-radius:16px;box-shadow:0 30px 80px -22px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
@@ -825,18 +827,27 @@ function flowAdjacency(util){
   });
   return adj;
 }
-// Every pipe reachable following the flow direction from startCode (includes startCode).
-function downstreamLines(util,startCode){
-  const adj=flowAdjacency(util);
+// Reverse graph: every pipe feeding INTO a given pipe (toLine -> its upstream fromLine).
+function upstreamAdjacency(util){
+  const adj=new Map();
+  state.data[util].features.forEach(j=>{
+    if(j.type!=='join'||!j.props.fromLine) return;
+    downOf(j).forEach(to=>{ if(!adj.has(to)) adj.set(to,[]); adj.get(to).push(j.props.fromLine); });
+  });
+  return adj;
+}
+// Walk the flow graph from startCode (dir 'down' follows flow, 'up' goes against it). Includes startCode.
+function flowReach(util,startCode,dir){
+  const adj=(dir==='up'?upstreamAdjacency:flowAdjacency)(util);
   const seen=new Set([startCode]); const q=[startCode];
   while(q.length){ const cur=q.shift(); (adj.get(cur)||[]).forEach(n=>{ if(!seen.has(n)){ seen.add(n); q.push(n); } }); }
   return seen;
 }
 function clearFlow(){ flowHalos.forEach(h=>map.removeLayer(h)); flowHalos=[]; }
-function traceDownstream(lineFeat){
+function traceFlow(lineFeat,dir){
   clearFlow();
   const util=lineFeat.util, color=UTILS[util].color;
-  const set=downstreamLines(util,lineFeat.code);
+  const set=flowReach(util,lineFeat.code,dir);
   const all=[]; let count=0, totalM=0;
   set.forEach(code=>{
     const ln=lineByCode(util,code); if(!ln) return;
@@ -846,8 +857,8 @@ function traceDownstream(lineFeat){
     if(!start){ count++; totalM+=lineLength(ln); }
   });
   if(all.length) map.fitBounds(L.latLngBounds(all).pad(0.3));
-  const term=UTILS[util].terms.line.toLowerCase();
-  toast(count?`${count} downstream ${term}${count!==1?'s':''} · ${fmtLen(totalM)}`:`No downstream ${term}s from here — set the upstream/downstream pipes at the joints.`);
+  const term=UTILS[util].terms.line.toLowerCase(), word=dir==='up'?'upstream':'downstream';
+  toast(count?`${count} ${word} ${term}${count!==1?'s':''} · ${fmtLen(totalM)}`:`No ${word} ${term}s from here — set the upstream/downstream pipes at the joints.`);
 }
 function downRowsHTML(feat){
   return (feat.props.toLines||[]).map((code,i)=>`
@@ -978,7 +989,7 @@ function renderAttr(){
     }
     extra+=`<div class="field"><label>Length</label><div class="ro">${fmtLen(lineLength(feat))}</div></div>`;
     if(feat.util==='telecom') extra+=`<button class="btn matrix" id="aTrace">Trace fibers</button>`;
-    if(isFlowNet(feat.util)) extra+=`<button class="btn flow" id="aFlow">Trace downstream</button>`;
+    if(isFlowNet(feat.util)) extra+=`<button class="btn flow" id="aFlow">Trace downstream</button><button class="btn flow up" id="aFlowUp">Trace upstream</button>`;
   }
   let rel='';
   if(feat.type==='join'){
@@ -1042,7 +1053,9 @@ function renderAttr(){
   const traceEl=document.getElementById('aTrace');
   if(traceEl) traceEl.onclick=()=>openFiberTable(feat);
   const flowEl=document.getElementById('aFlow');
-  if(flowEl) flowEl.onclick=()=>traceDownstream(feat);
+  if(flowEl) flowEl.onclick=()=>traceFlow(feat,'down');
+  const flowUpEl=document.getElementById('aFlowUp');
+  if(flowUpEl) flowUpEl.onclick=()=>traceFlow(feat,'up');
   // generic joint
   const fromEl=document.getElementById('aFrom');
   if(fromEl) fromEl.onchange=e=>{feat.props.fromLine=e.target.value;highlightRelations(feat);renderAttr();};
