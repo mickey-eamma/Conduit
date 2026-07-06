@@ -424,6 +424,10 @@
   .trace-empty{font-size:12.5px;color:var(--ink-faint);padding:6px 2px}
   .trace-card{flex:0 0 auto;min-width:150px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--panel-2)}
   .trace-card.start{border-color:var(--telecom);box-shadow:0 0 0 2px color-mix(in srgb,var(--telecom) 22%,transparent)}
+  .trace-card.flow-start{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 24%,transparent)}
+  .flow-col{display:flex;flex-direction:column;gap:8px;justify-content:center;flex:0 0 auto}
+  .flow-link{flex:0 0 auto;align-self:center;display:flex;align-items:center;justify-content:center;padding:0 6px;min-width:34px}
+  .flow-link .fl-arrow{color:var(--c,var(--ink-faint));font-size:20px;font-weight:700;line-height:1}
   .trace-card .tc-strand{height:5px;border-radius:3px;margin:-2px -4px 9px;border:1px solid rgba(0,0,0,.12)}
   .trace-card .tc-name{font-weight:700;font-size:13.5px;margin-bottom:6px}
   .trace-card .tc-fiber{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink);margin-bottom:4px}
@@ -618,7 +622,7 @@ const TOOLS = {
 const state={ util:'telecom', tool:'pan', snap:true, uid:1, selected:null, data:{} };
 let map, draftLatLngs=[], draftLayer=null, draftVerts=null, halo=null, grat=null, tilesOk=false, relHalos=[];
 let fiberModal=null, currentSplice=null, dragWire=null, armed=null;
-let fiberTableModal=null, traceModal=null, traceHalos=[], flowHalos=[];
+let fiberTableModal=null, traceModal=null, traceHalos=[], flowHalos=[], flowModal=null;
 
 function initMap(){
   map=L.map('map',{doubleClickZoom:false,zoomControl:true}).setView([32.74,-97.05],12);
@@ -839,20 +843,27 @@ function upstreamAdjacency(util){
   });
   return adj;
 }
-// Walk the flow graph from startCode (dir 'down' follows flow, 'up' goes against it). Includes startCode.
-function flowReach(util,startCode,dir){
+// Walk the flow graph from startCode grouped by hop distance (BFS levels). dir 'down' follows flow, 'up' against it.
+function flowLevels(util,startCode,dir){
   const adj=(dir==='up'?upstreamAdjacency:flowAdjacency)(util);
-  const seen=new Set([startCode]); const q=[startCode];
-  while(q.length){ const cur=q.shift(); (adj.get(cur)||[]).forEach(n=>{ if(!seen.has(n)){ seen.add(n); q.push(n); } }); }
-  return seen;
+  const levels=[[startCode]], seen=new Set([startCode]); let frontier=[startCode];
+  while(frontier.length){
+    const next=[];
+    frontier.forEach(cur=>{ (adj.get(cur)||[]).forEach(n=>{ if(!seen.has(n)){ seen.add(n); next.push(n); } }); });
+    if(next.length) levels.push(next);
+    frontier=next;
+  }
+  return levels;
 }
 function clearFlow(){ flowHalos.forEach(h=>map.removeLayer(h)); flowHalos=[]; }
+function closeFlowGraph(){ if(flowModal){flowModal.remove();flowModal=null;} }
 function traceFlow(lineFeat,dir){
   clearFlow();
   const util=lineFeat.util, color=UTILS[util].color;
-  const set=flowReach(util,lineFeat.code,dir);
+  const levels=flowLevels(util,lineFeat.code,dir);
+  const codes=[].concat(...levels);
   const all=[]; let count=0, totalM=0;
-  set.forEach(code=>{
+  codes.forEach(code=>{
     const ln=lineByCode(util,code); if(!ln) return;
     const start=code===lineFeat.code;
     flowHalos.push(L.polyline(ln.latlngs,{color:start?'#1f2430':color,weight:start?7:11,opacity:start?.55:.34,interactive:false}).addTo(map));
@@ -860,8 +871,37 @@ function traceFlow(lineFeat,dir){
     if(!start){ count++; totalM+=lineLength(ln); }
   });
   if(all.length) map.fitBounds(L.latLngBounds(all).pad(0.3));
-  const term=UTILS[util].terms.line.toLowerCase(), word=dir==='up'?'upstream':'downstream';
-  toast(count?`${count} ${word} ${term}${count!==1?'s':''} · ${fmtLen(totalM)}`:`No ${word} ${term}s from here — set the upstream/downstream pipes at the joints.`);
+  openFlowGraph(lineFeat.code,dir,util,levels,count,totalM);
+}
+function openFlowGraph(startCode,dir,util,levels,count,totalM){
+  closeFlowGraph(); closeTrace();
+  const color=UTILS[util].color, term=UTILS[util].terms.line, dirWord=dir==='up'?'upstream':'downstream';
+  const startLn=lineByCode(util,startCode), startNm=startLn?(startLn.props.name||startCode):startCode;
+  // Left is always the source side: for an upstream trace, reverse so sources sit left and the start pipe sits right.
+  const cols = dir==='up' ? levels.slice().reverse() : levels;
+  let chain='';
+  cols.forEach((col,ci)=>{
+    let cards='';
+    col.forEach(code=>{
+      const ln=lineByCode(util,code); if(!ln) return;
+      const isStart=code===startCode, st=ln.props.status||'Active';
+      cards+=`<div class="trace-card${isStart?' flow-start':''}" style="--c:${color}">
+        <div class="tc-strand" style="background:${color}"></div>
+        <div class="tc-name">${escapeHtml(ln.props.name||ln.code)}</div>
+        <div class="tc-fiber">${escapeHtml(term)} · ${fmtLen(lineLength(ln))}</div>
+        <div class="tc-tube">${st}</div></div>`;
+    });
+    chain+=`<div class="flow-col">${cards}</div>`;
+    if(ci<cols.length-1) chain+=`<div class="flow-link" style="--c:${color}"><span class="fl-arrow">→</span></div>`;
+  });
+  flowModal=document.createElement('div'); flowModal.className='trace-panel';
+  flowModal.innerHTML=`
+    <div class="trace-head"><div><b>${dir==='up'?'Upstream':'Downstream'} flow</b> · ${escapeHtml(startNm)}</div>
+      <div class="trace-meta">${count} ${dirWord} ${term.toLowerCase()}${count!==1?'s':''} · ${fmtLen(totalM)} run</div>
+      <button class="x" id="flX">&times;</button></div>
+    <div class="trace-chain">${count?chain:`<span class="trace-empty">No ${dirWord} ${term.toLowerCase()}s from here — set the upstream/downstream pipes at the joints.</span>`}</div>`;
+  document.body.appendChild(flowModal);
+  flowModal.querySelector('#flX').onclick=closeFlowGraph;
 }
 function downRowsHTML(feat){
   return (feat.props.toLines||[]).map((code,i)=>`
@@ -931,7 +971,7 @@ function selectFeature(feat){
 function deselect(){
   state.selected=null;
   if(halo){map.removeLayer(halo);halo=null;}
-  clearRelHalos(); clearFlow();
+  clearRelHalos(); clearFlow(); closeFlowGraph();
   document.getElementById('attrBody').innerHTML=`<p class="attr-empty">Choose the <b>Select</b> tool and click any feature on the map to name it and edit its details.</p>`;
 }
 function lineOptions(util,selected,exclude){
@@ -1389,7 +1429,7 @@ function runTrace(cable,fiber){
   openTraceGraph(seq,cable,fiber);
 }
 function openTraceGraph(seq,startCable,startFiber){
-  closeTrace(true);
+  closeTrace(true); closeFlowGraph();
   traceModal=document.createElement('div'); traceModal.className='trace-panel';
   const startNm=(lineByCode('telecom',startCable)||{props:{}}).props.name||startCable;
   let chain='';
@@ -2326,6 +2366,10 @@ function buildViewerHTML(clientName){
   .trace-empty{font-size:12.5px;color:var(--ink-faint);padding:6px 2px}
   .trace-card{flex:0 0 auto;min-width:150px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:#faf9f6}
   .trace-card.start{border-color:#7c4ddb;box-shadow:0 0 0 2px color-mix(in srgb,#7c4ddb 22%,transparent)}
+  .trace-card.flow-start{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 24%,transparent)}
+  .flow-col{display:flex;flex-direction:column;gap:8px;justify-content:center;flex:0 0 auto}
+  .flow-link{flex:0 0 auto;align-self:center;display:flex;align-items:center;justify-content:center;padding:0 6px;min-width:34px}
+  .flow-link .fl-arrow{color:var(--c,var(--ink-faint));font-size:20px;font-weight:700;line-height:1}
   .trace-card .tc-strand{height:5px;border-radius:3px;margin:-2px -4px 9px;border:1px solid rgba(0,0,0,.12)}
   .trace-card .tc-name{font-weight:700;font-size:13.5px;margin-bottom:6px}
   .trace-card .tc-fiber{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink);margin-bottom:4px}
@@ -2507,7 +2551,7 @@ var vModal=null, vTrace=null, toolHalos=[];
 function closeVModal(){ if(vModal){vModal.remove();vModal=null;} }
 function clearToolHalos(){ for(var i=0;i<toolHalos.length;i++)map.removeLayer(toolHalos[i]); toolHalos=[]; }
 function closeTraceV(keep){ if(vTrace){vTrace.remove();vTrace=null;} if(!keep)clearToolHalos(); }
-document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeVModal(); closeTraceV(); } });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeVModal(); closeTraceV(); closeFlowV(); } });
 function fibNodeV(side,line,fiber){
   var c=fiberColor(fiber);
   var inner=side==='in'
@@ -2594,7 +2638,7 @@ function runTraceV(cable,fiber){
   openTraceGraphV(seq,cable,fiber);
 }
 function openTraceGraphV(seq,startCable,startFiber){
-  closeTraceV(true); var tm=document.createElement('div'); tm.className='trace-panel'; vTrace=tm;
+  closeTraceV(true); closeFlowV(); var tm=document.createElement('div'); tm.className='trace-panel'; vTrace=tm;
   var sln=lineByCodeV('telecom',startCable), startNm=sln?(sln.props.name||startCable):startCable, chain='';
   seq.forEach(function(s,i){ var ln=lineByCodeV('telecom',s.cable), nm=ln?(ln.props.name||ln.code):s.cable;
     var place=ln&&ln.props.placement==='Underground'?'Underground':'Aerial', isStart=s.cable===startCable&&s.fiber===startFiber;
@@ -2613,16 +2657,39 @@ function flowAdjV(util,rev){
     dn.forEach(function(to){ if(!to)return; var a=rev?to:j.props.fromLine, b=rev?j.props.fromLine:to; if(!adj[a])adj[a]=[]; adj[a].push(b); }); });
   return adj;
 }
+function flowLevelsV(util,code,dir){
+  var adj=flowAdjV(util,dir==='up'), levels=[[code]], seen={}; seen[code]=1; var frontier=[code];
+  while(frontier.length){ var next=[]; frontier.forEach(function(cur){ (adj[cur]||[]).forEach(function(n){ if(!seen[n]){seen[n]=1;next.push(n);} }); }); if(next.length)levels.push(next); frontier=next; }
+  return levels;
+}
+var vFlow=null;
+function closeFlowV(){ if(vFlow){vFlow.remove();vFlow=null;} }
 function traceFlowV(code,dir,util){
-  clearToolHalos(); closeTraceV(true);
+  clearToolHalos(); closeTraceV(true); closeFlowV();
   if(!util){ if(lineByCodeV('water',code))util='water'; else if(lineByCodeV('oilgas',code))util='oilgas'; }
   if(!util)return;
-  var adj=flowAdjV(util,dir==='up'), seen={}; seen[code]=1; var q=[code];
-  while(q.length){ var cur=q.shift(); (adj[cur]||[]).forEach(function(n){ if(!seen[n]){seen[n]=1;q.push(n);} }); }
-  var color=UTILS[util].color, all=[];
-  Object.keys(seen).forEach(function(cc){ var ln=lineByCodeV(util,cc); if(!ln)return; var start=cc===code, pts=ln.latlngs.map(function(p){return L.latLng(p[0],p[1]);});
-    toolHalos.push(L.polyline(pts,{color:start?'#1f2430':color,weight:start?7:11,opacity:start?.55:.34,interactive:false}).addTo(map)); pts.forEach(function(ll){all.push(ll);}); });
+  var levels=flowLevelsV(util,code,dir), codes=[]; levels.forEach(function(l){codes=codes.concat(l);});
+  var color=UTILS[util].color, all=[], count=0, totalM=0;
+  codes.forEach(function(cc){ var ln=lineByCodeV(util,cc); if(!ln)return; var start=cc===code, pts=ln.latlngs.map(function(p){return L.latLng(p[0],p[1]);});
+    toolHalos.push(L.polyline(pts,{color:start?'#1f2430':color,weight:start?7:11,opacity:start?.55:.34,interactive:false}).addTo(map)); pts.forEach(function(ll){all.push(ll);}); if(!start){count++;totalM+=lineLenV(ln.latlngs);} });
   if(all.length)map.fitBounds(L.latLngBounds(all).pad(0.3));
+  openFlowGraphV(code,dir,util,levels,count,totalM);
+}
+function openFlowGraphV(startCode,dir,util,levels,count,totalM){
+  closeFlowV(); closeTraceV(true);
+  var color=UTILS[util].color, term=UTILS[util].terms.line, dirWord=dir==='up'?'upstream':'downstream';
+  var startLn=lineByCodeV(util,startCode), startNm=startLn?(startLn.props.name||startCode):startCode;
+  var cols=dir==='up'?levels.slice().reverse():levels, chain='';
+  cols.forEach(function(col,ci){
+    var cards='';
+    col.forEach(function(cc){ var ln=lineByCodeV(util,cc); if(!ln)return; var isStart=cc===startCode, st=ln.props.status||'Active';
+      cards+='<div class="trace-card'+(isStart?' flow-start':'')+'" style="--c:'+color+'"><div class="tc-strand" style="background:'+color+'"></div><div class="tc-name">'+esc(ln.props.name||ln.code)+'</div><div class="tc-fiber">'+esc(term)+' · '+fmtLen(lineLenV(ln.latlngs))+'</div><div class="tc-tube">'+st+'</div></div>'; });
+    chain+='<div class="flow-col">'+cards+'</div>';
+    if(ci<cols.length-1) chain+='<div class="flow-link" style="--c:'+color+'"><span class="fl-arrow">→</span></div>';
+  });
+  var tm=document.createElement('div'); tm.className='trace-panel'; vFlow=tm;
+  tm.innerHTML='<div class="trace-head"><div><b>'+(dir==='up'?'Upstream':'Downstream')+' flow</b> · '+esc(startNm)+'</div><div class="trace-meta">'+count+' '+dirWord+' '+term.toLowerCase()+(count!==1?'s':'')+' · '+fmtLen(totalM)+' run</div><button class="x" id="flX">&times;</button></div><div class="trace-chain">'+(count?chain:'<span class="trace-empty">No '+dirWord+' '+term.toLowerCase()+'s from here.</span>')+'</div>';
+  document.body.appendChild(tm); tm.querySelector('#flX').onclick=closeFlowV;
 }
 document.addEventListener('click',function(e){
   var b=e.target&&e.target.closest?e.target.closest('.pp-btn'):null; if(!b)return;
