@@ -1908,7 +1908,7 @@ function setMainView(v){
     setTimeout(()=>{ builder.map.invalidateSize(); syncBuilder(); },60);
   } else if(v==='crossings'){
     document.getElementById('dash').hidden=true;
-    if(!crossings.map){ initCrossings(); setTimeout(()=>{ crossings.map.invalidateSize(); syncCrossings(); cxFit(); },60); }
+    if(!crossings.map){ initCrossings(); setTimeout(()=>{ crossings.map.invalidateSize(); syncCrossings(); cxFit(); cxLoadDefaults(); },60); }
     else setTimeout(()=>{ crossings.map.invalidateSize(); syncCrossings(); },60);
   } else {
     const vt=document.querySelector('.vt.active');
@@ -2152,7 +2152,7 @@ function syncCrossings(){
   renderCxLineList(); cxRenderAgsList(); renderCxSummary();
   const n=crossings.selected.size; document.getElementById('cxSelCount').textContent=n?n+' selected':'';
 }
-function cxFit(){ const all=[]; cxAllLines().forEach(l=>l.latlngs.forEach(ll=>all.push(ll))); if(all.length) crossings.map.fitBounds(L.latLngBounds(all).pad(0.25)); }
+function cxFit(){ const all=[]; cxAllLines().forEach(l=>l.latlngs.forEach(ll=>all.push(ll))); if(all.length) crossings.map.fitBounds(L.latLngBounds(all).pad(0.25),{animate:false}); }
 function renderCxLineList(){
   const host=document.getElementById('cxLineList'); if(!host) return; host.innerHTML=''; let any=false;
   ORDER.forEach(id=>{
@@ -2195,12 +2195,13 @@ function renderCxSummary(){
 }
 /* --- crossings ArcGIS loader (reuses the generic ags fetch helpers) --- */
 function cxStatus(msg,isErr){ const el=document.getElementById('cxStatus'); if(!el) return; el.textContent=msg||''; el.classList.toggle('err',!!isErr); el.classList.toggle('show',!!msg); }
-function cxPushFeatureLayer(name,url,gj){
-  const color=AGS_PALETTE[(crossings.nextA-1)%AGS_PALETTE.length];
-  const rec={id:'c'+(crossings.nextA++),kind:'features',url,title:name,color,visible:true,geojson:gj};
+function cxPushFeatureLayer(name,url,gj,opts){
+  opts=opts||{};
+  const color=opts.color||AGS_PALETTE[(crossings.nextA-1)%AGS_PALETTE.length];
+  const rec={id:'c'+(crossings.nextA++),kind:'features',url,title:name,color,visible:true,geojson:gj,isDefault:!!opts.isDefault};
   rec.layer=agsGeoJsonLayer(gj,color); if(crossings.map) rec.layer.addTo(crossings.map);
   crossings.arcgisLayers.push(rec);
-  try{ const b=rec.layer.getBounds(); if(b.isValid()) crossings.map.fitBounds(b.pad(0.2)); }catch(e){}
+  if(!opts.noFit){ try{ const b=rec.layer.getBounds(); if(b.isValid()) crossings.map.fitBounds(b.pad(0.2)); }catch(e){} }
   return (gj.features||[]).length;
 }
 function cxAddTile(url,meta){
@@ -2225,6 +2226,23 @@ async function cxReloadInView(){
   }
   cxStatus(`Reloaded ${feats.length} layer${feats.length!==1?'s':''} · ${total} feature${total!==1?'s':''} in view${capped?' (a layer hit the server limit — zoom in further)':''}.`,false);
   btn.classList.remove('busy'); syncCrossings();
+}
+// Reference layers auto-loaded on the Crossings map (filtered to the client's area).
+const CX_DEFAULTS=[
+  {title:'Rivers and Streams', color:'#2b7fd6', url:'https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Rivers_and_Streams/FeatureServer/0'},
+  {title:'Railroads', color:'#4b5563', url:'https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Railroads/FeatureServer/0'}
+];
+async function cxLoadDefaults(){
+  if(crossings.defaultsLoaded) return; crossings.defaultsLoaded=true;
+  const bbox=cxBounds();
+  for(const d of CX_DEFAULTS){
+    try{
+      cxStatus(`Loading ${d.title}…`,false);
+      const gj=await agsQueryFeatures(d.url,bbox);
+      cxPushFeatureLayer(d.title,d.url,gj,{color:d.color,isDefault:true,noFit:true});
+    }catch(e){ /* skip if the service is unreachable */ }
+  }
+  cxStatus('',false); syncCrossings();
 }
 async function cxAddArcgis(){
   const input=document.getElementById('cxUrl'), btn=document.getElementById('cxAdd');
