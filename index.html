@@ -46,6 +46,14 @@
   .client-sel{font-family:var(--ui);font-size:13px;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:150px;cursor:pointer}
   .client-sel:focus{outline:none;border-color:var(--accent)}
   .cb-btn{padding:6px 10px;font-size:12px}
+  .menu-wrap{position:relative;display:flex;align-items:center}
+  .menu-btn{display:inline-flex;align-items:center;gap:6px}
+  .menu-btn::after{content:'\25BE';font-size:9px;color:var(--ink-faint);line-height:1}
+  .menu{position:absolute;top:calc(100% + 6px);right:0;z-index:2100;min-width:172px;background:var(--panel);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);padding:5px;display:flex;flex-direction:column;gap:2px}
+  .menu-item{font-family:var(--ui);font-size:13px;font-weight:600;color:var(--ink);background:none;border:none;border-radius:8px;padding:9px 11px;text-align:left;cursor:pointer;white-space:nowrap}
+  .menu-item:hover{background:var(--panel-2)}
+  .menu-item.danger{color:#c2334d}
+  .menu-item.danger:hover{background:#fdf3f5}
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);z-index:4000;background:#1f2430;color:#fff;font-size:13px;font-weight:600;padding:10px 18px;border-radius:10px;box-shadow:0 12px 32px -10px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.22s}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -620,15 +628,22 @@
       <div class="client-bar">
         <span class="cb-icon">Client</span>
         <select class="client-sel" id="clientSelect"><option value="">— None —</option></select>
-        <button class="btn cb-btn" id="clientSave" title="Save current networks to this client">Save</button>
-        <button class="btn cb-btn" id="clientNew" title="Start a new blank client">New</button>
-        <button class="btn cb-btn" id="clientRename" title="Rename this client">Rename</button>
-        <button class="btn cb-btn danger" id="clientDelete" title="Delete this client">Delete</button>
+        <div class="menu-wrap">
+          <button class="btn cb-btn menu-btn" id="clientMenuBtn" title="Client actions">Manage</button>
+          <div class="menu" id="clientMenu" hidden>
+            <button class="menu-item" id="clientSave">Save client</button>
+            <button class="menu-item" id="clientNew">New client</button>
+            <button class="menu-item" id="clientRename">Rename client</button>
+            <button class="menu-item danger" id="clientDelete">Delete client</button>
+          </div>
+        </div>
       </div>
-      <div class="user-bar" id="userBar" hidden>
-        <span class="ub-name" id="ubName"></span>
-        <button class="btn cb-btn" id="usersBtn" hidden>Users</button>
-        <button class="btn cb-btn" id="signOut">Sign out</button>
+      <div class="user-bar menu-wrap" id="userBar" hidden>
+        <button class="btn cb-btn menu-btn" id="userMenuBtn"><span class="ub-name" id="ubName"></span></button>
+        <div class="menu" id="userMenu" hidden>
+          <button class="menu-item" id="usersBtn" hidden>Users</button>
+          <button class="menu-item" id="signOut">Sign out</button>
+        </div>
       </div>
     </div>
   </header>
@@ -3760,6 +3775,17 @@ function copyUsersForHtml(){
 }
 function resetUsers(){ if(!confirm('Reset users to the built-in list defined in the HTML?')) return; try{ localStorage.removeItem(USERS_KEY); }catch(e){} renderUsers(); toast('Reset to the built-in users.'); }
 
+/* ---------- app-bar dropdown menus ---------- */
+function closeMenus(){ document.querySelectorAll('.app-bar .menu').forEach(m=>m.hidden=true); }
+function initMenus(){
+  document.querySelectorAll('.app-bar .menu-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{ e.stopPropagation(); const menu=btn.parentElement.querySelector('.menu'); const willOpen=menu.hidden; closeMenus(); menu.hidden=!willOpen; });
+  });
+  document.querySelectorAll('.app-bar .menu-item').forEach(mi=>mi.addEventListener('click',closeMenus));
+  document.addEventListener('click',closeMenus);
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeMenus(); });
+}
+
 window.addEventListener('load',()=>{
   const viewName=new URLSearchParams(location.search).get('view');
   if(viewName){ document.body.style.visibility='hidden'; renderLiveView(viewName); return; }
@@ -3784,6 +3810,7 @@ window.addEventListener('load',()=>{
   document.getElementById('clientDelete').onclick=clientDelete;
   initClients();
   initAuth();
+  initMenus();
 });
 </script>
 </body>
