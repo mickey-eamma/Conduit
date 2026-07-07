@@ -1,0 +1,18 @@
+:root{
+  --bg:#f3f1ec;
+  --panel:#ffffff;
+  --panel-2:#faf9f6;
+  --line:#e6e2d9;
+  --line-soft:#efece4;
+  --ink:#2c3038;
+  --ink-dim:#6c7480;
+  --ink-faint:#9aa1ac;
+  --accent:#7c4ddb;
+  --telecom:#7c4ddb;
+  --water:#0891b2;
+  --electric:#e08700;
+  --oilgas:#e11d48;
+  --shadow:0 8px 24px -12px rgba(40,44,52,.28);
+  --shadow-sm:0 2px 8px -3px rgba(40,44,52,.18);
+  --ui:'Figtree',system-ui,-apple-system,sans-serif;
+}
