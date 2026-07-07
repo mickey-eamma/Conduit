@@ -336,6 +336,9 @@
   .util-tab.active .ct{color:var(--u)}
   .util-tab.active::before{content:"";position:absolute;left:-11px;top:50%;transform:translateY(-50%);width:3px;height:22px;border-radius:3px;background:var(--u)}
   /* Land group flyout: Sites / Parcels */
+  /* hovered tabs get transform:translateY(-1px), which makes each a stacking context;
+     the map has z-index:1, so lift the hovered Land tab's whole context above it */
+  .land-group:hover{z-index:2600}
   .land-group .land-flyout{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);display:none;flex-direction:column;gap:3px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:2000;min-width:150px}
   .land-group:hover .land-flyout{display:flex}
   .land-flyout::before{content:"";position:absolute;left:-12px;top:0;width:12px;height:100%}
