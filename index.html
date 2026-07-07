@@ -395,6 +395,13 @@
   .sym-source{width:13px;height:13px;background:var(--accent);transform:rotate(45deg);border:1.5px solid #fff;box-shadow:0 0 0 1px var(--accent)}
   .sym-join{width:14px;height:14px;border-radius:50%;border:3px solid var(--accent);background:#fff}
   .sym-delivery{width:12px;height:12px;border-radius:3px;background:var(--accent);border:1.5px solid #fff;box-shadow:0 0 0 1px var(--accent)}
+  .sym-site{width:15px;height:12px;border:2px dashed #2f7d4f;background:rgba(47,125,79,.08);border-radius:2px}
+  .sym-lease{width:15px;height:12px;border:2px solid #2f7d4f;background:rgba(74,160,111,.28);border-radius:2px}
+  .sym-building{width:13px;height:11px;border:1.5px solid #8a5a2b;background:rgba(192,131,65,.7);border-radius:1px}
+  .land-ctx{position:absolute;top:62px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;gap:9px;padding:7px 13px;background:var(--panel);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);font-size:13px}
+  .land-ctx[hidden]{display:none}
+  .land-ctx .lc-label{font-weight:700;color:#2f7d4f}
+  .land-ctx select{padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font-size:13px;max-width:220px}
 
   .layer-row{display:flex;align-items:center;gap:11px;padding:8px 0;cursor:pointer}
   .layer-row .check{width:17px;height:17px;border-radius:5px;border:1.5px solid #cfcabe;flex:0 0 17px;display:grid;place-items:center;transition:.12s;background:#fff}
@@ -666,6 +673,10 @@
 
     <main class="map-area" id="mapArea" data-cursor="pan">
       <div class="toolbar" id="toolbar"></div>
+      <div class="land-ctx" id="landCtx" hidden>
+        <span class="lc-label" id="landCtxLabel">Lease in Site:</span>
+        <select id="landCtxSelect"></select>
+      </div>
       <div class="view-tabs" id="viewTabs">
         <button class="vt active" data-view="map">Map</button>
         <button class="vt" data-view="dashboard">Dashboard</button>
@@ -860,16 +871,23 @@ const GLYPH = {
   telecom:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M6.5 6.5a8 8 0 0 0 0 11M17.5 6.5a8 8 0 0 1 0 11M4 4a12 12 0 0 0 0 16M20 4a12 12 0 0 1 0 16"/></svg>',
   water:'<svg viewBox="0 0 24 24"><path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11Z"/></svg>',
   electric:'<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>',
-  oilgas:'<svg viewBox="0 0 24 24"><path d="M5 21V8l5-3 5 3v13"/><path d="M3 21h18M9 12h2M9 16h2"/><path d="M15 11h3a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2"/></svg>'
+  oilgas:'<svg viewBox="0 0 24 24"><path d="M5 21V8l5-3 5 3v13"/><path d="M3 21h18M9 12h2M9 16h2"/><path d="M15 11h3a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2"/></svg>',
+  land:'<svg viewBox="0 0 24 24"><path d="M4 5v14l5-2 6 2 5-2V3l-5 2-6-2-5 2Z"/><path d="M9 3v16M15 5v16"/></svg>'
 };
 const UTILS = {
   telecom:{ label:'Telecom', color:'#7c4ddb', abbr:'TEL', terms:{ line:'Fiber cable', source:'Central office / headend', join:'Splice point', delivery:'Service drop' }},
   water:{ label:'Water', color:'#0891b2', abbr:'WTR', terms:{ line:'Water main', source:'Treatment plant / pump', join:'Valve / fitting', delivery:'Service meter' }},
   electric:{ label:'Electric', color:'#e08700', abbr:'ELC', terms:{ line:'Distribution line', source:'Substation / generation', join:'Transformer / junction', delivery:'Service meter' }},
-  oilgas:{ label:'Oil & Gas', color:'#e11d48', abbr:'OIL', terms:{ line:'Pipeline', source:'Wellhead / refinery', join:'Joint / fitting', delivery:'City gate / delivery' }}
+  oilgas:{ label:'Oil & Gas', color:'#e11d48', abbr:'OIL', terms:{ line:'Pipeline', source:'Wellhead / refinery', join:'Joint / fitting', delivery:'City gate / delivery' }},
+  land:{ label:'Land', color:'#3f7f4f', abbr:'LND', terms:{ site:'Site', lease:'Lease', building:'Building', line:'Boundary', source:'Marker', join:'Node', delivery:'Point' }}
 };
-const ORDER=['telecom','water','electric','oilgas'];
-const ROLEABBR={line:'LN',source:'SRC',join:'JN',delivery:'DLV'};
+const ORDER=['telecom','water','electric','oilgas'];      // utility networks (line/point logic)
+const MODES=['telecom','water','electric','oilgas','land']; // all rail modes incl. Land (polygons)
+const ROLEABBR={line:'LN',source:'SRC',join:'JN',delivery:'DLV',site:'STE',lease:'LSE',building:'BLD'};
+const POLY_TYPES=['site','lease','building'];              // Land polygon feature types (Site > Lease > Building)
+function isPathTool(t){ return t==='line'||POLY_TYPES.includes(t); }
+function toolsFor(util){ return util==='land' ? ['pan','site','lease','building','delete'] : ['pan','line','source','join','delivery','delete']; }
+let landCtx={site:'',lease:''};   // chosen parent Site (for a new lease) / Lease (for a new building)
 const STATUSES=['Active','Construction','Planned','Abandoned'];
 const STATUS_COLOR={Active:'#16a34a',Construction:'#ea580c',Planned:'#2563eb',Abandoned:'#9aa1ad'};
 const STATUS_DASH={Active:null,Construction:'2 6',Planned:'9 7',Abandoned:'7 7'};
@@ -888,6 +906,9 @@ const TOOLS = {
   source:{icon:'<path d="M12 4 18 10 12 16 6 10Z"/>',label:'Place',role:'source'},
   join:{icon:'<circle cx="12" cy="12" r="5"/>',label:'Place',role:'join'},
   delivery:{icon:'<rect x="6" y="6" width="12" height="12" rx="2"/>',label:'Place',role:'delivery'},
+  site:{icon:'<path d="M12 3 20 9 17 20 7 20 4 9Z"/>',label:'Draw',role:'site'},
+  lease:{icon:'<rect x="5" y="7" width="14" height="10" rx="1"/>',label:'Draw',role:'lease'},
+  building:{icon:'<path d="M4 21V9l8-5 8 5v12"/><rect x="9" y="13" width="6" height="8"/>',label:'Draw',role:'building'},
   delete:{icon:'<path d="M5 7h14M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',label:'Delete feature',role:null}
 };
 
@@ -912,12 +933,12 @@ function initMap(){
   tiles.on('tileload',()=>{ if(!tilesOk){ tilesOk=true; map.off('moveend zoomend',drawGraticule); grat.clearLayers(); hideBasemapNote(); } });
   // If tiles are blocked (this preview sandbox), keep the grid and explain.
   tiles.on('tileerror',()=>{ if(!tilesOk) showBasemapNote(); });
-  for(const id of ORDER) state.data[id]={visible:true,group:L.layerGroup().addTo(map),features:[]};
+  for(const id of MODES) state.data[id]={visible:true,group:L.layerGroup().addTo(map),features:[]};
   map.on('click',onMapClick);
-  map.on('dblclick',()=>{ if(state.tool==='line') finishLine(); });
+  map.on('dblclick',()=>{ if(isPathTool(state.tool)) finishLine(); });
   map.on('mousemove',e=>{
     document.getElementById('stCoord').textContent=e.latlng.lat.toFixed(5)+', '+e.latlng.lng.toFixed(5);
-    if(state.tool==='line'&&draftLatLngs.length) previewLine(e.latlng);
+    if(isPathTool(state.tool)&&draftLatLngs.length) previewLine(e.latlng);
   });
 }
 function intervalForZoom(z){ if(z>=16)return .002; if(z>=14)return .005; if(z>=12)return .02; if(z>=10)return .05; if(z>=8)return .2; if(z>=6)return .5; return 1; }
@@ -937,7 +958,7 @@ function hideBasemapNote(){const el=document.getElementById('bmNote');if(el)el.c
 
 function buildRail(){
   const rail=document.getElementById('rail');
-  for(const id of ORDER){
+  for(const id of MODES){
     const u=UTILS[id], el=document.createElement('div');
     el.className='util-tab'+(id===state.util?' active':'');
     el.style.setProperty('--u',u.color); el.dataset.id=id;
@@ -946,9 +967,10 @@ function buildRail(){
   }
 }
 function buildToolbar(){
-  const tb=document.getElementById('toolbar');
-  ['pan','line','source','join','delivery','delete'].forEach(t=>{
-    if(t==='source'||t==='delete'){const s=document.createElement('div');s.className='tool-sep';tb.appendChild(s);}
+  const tb=document.getElementById('toolbar'); tb.innerHTML='';
+  toolsFor(state.util).forEach(t=>{
+    const sep = state.util==='land' ? (t==='site'||t==='delete') : (t==='source'||t==='delete');
+    if(sep){const s=document.createElement('div');s.className='tool-sep';tb.appendChild(s);}
     const b=document.createElement('button');
     b.className='tool'+(t===state.tool?' active':''); b.dataset.tool=t;
     b.innerHTML=`<svg viewBox="0 0 24 24">${TOOLS[t].icon}</svg><span class="tip" data-tip="${t}"></span>`;
@@ -957,23 +979,26 @@ function buildToolbar(){
 }
 
 function setUtil(id){
-  if(state.tool==='line') cancelLine();
+  if(isPathTool(state.tool)) cancelLine();
   deselect();
   state.util=id;
   document.documentElement.style.setProperty('--accent',UTILS[id].color);
   document.querySelectorAll('.util-tab').forEach(t=>t.classList.toggle('active',t.dataset.id===id));
   document.getElementById('netName').textContent=UTILS[id].label;
   document.getElementById('stMode').textContent=UTILS[id].label;
+  document.body.classList.toggle('land-mode',id==='land');
+  buildToolbar();
+  const tl=toolsFor(id); setTool(tl.includes(state.tool)?state.tool:'pan');
   renderLegend(); renderTipNote(); refreshTips();
 }
 function setTool(t){
-  if(state.tool==='line'&&t!=='line') cancelLine();
+  if(isPathTool(state.tool)&&t!==state.tool) cancelLine();
   if(t!=='pan') stopEditGeometry();
   state.tool=t;
   document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));
   document.getElementById('stTool').textContent = t==='pan'?'Select':(TOOLS[t].role?adaptiveLabel(t):'Delete');
-  document.getElementById('mapArea').dataset.cursor = (t==='line'||['source','join','delivery'].includes(t))?'draw':(t==='delete'?'delete':'pan');
-  setHint();
+  document.getElementById('mapArea').dataset.cursor = (isPathTool(t)||['source','join','delivery'].includes(t))?'draw':(t==='delete'?'delete':'pan');
+  setHint(); updateLandCtx();
 }
 function adaptiveLabel(t){const r=TOOLS[t].role;return r?TOOLS[t].label+' '+UTILS[state.util].terms[r].split(' / ')[0].toLowerCase():TOOLS[t].label;}
 function refreshTips(){
@@ -990,13 +1015,16 @@ function setHint(){
     source:`Click the map to place a ${term('source').toLowerCase()} — where the commodity originates.`,
     join:`Click to drop a ${term('join').toLowerCase()}, then pick the two lines it connects.`,
     delivery:`Click to place a ${term('delivery').toLowerCase()} — where service is delivered.`,
+    site:'Click to lay the corners of a Site boundary. Double-click or Enter to close · Esc to cancel.',
+    lease:'Pick a parent Site above, then click to draw the Lease boundary inside it. Double-click or Enter to close.',
+    building:'Pick a parent Lease above, then click to draw the Building footprint inside it. Double-click or Enter to close.',
     delete:'Click any feature on the map to remove it.'
   };
   document.getElementById('hintText').textContent=msg[state.tool];
 }
 
 /* snapping */
-function snapPoints(){const pts=[];state.data[state.util].features.forEach(f=>{if(f.type==='line')f.latlngs.forEach(ll=>pts.push(ll));else pts.push(f.latlng);});return pts;}
+function snapPoints(){const pts=[];state.data[state.util].features.forEach(f=>{if(f.latlngs)f.latlngs.forEach(ll=>pts.push(ll));else if(f.latlng)pts.push(f.latlng);});return pts;}
 function snap(latlng){
   if(!state.snap) return latlng;
   const p=map.latLngToContainerPoint(latlng);let best=null,bd=14;
@@ -1007,13 +1035,21 @@ function snap(latlng){
 function onMapClick(e){
   const t=state.tool;
   if(t==='line') addVertex(snap(e.latlng));
+  else if(POLY_TYPES.includes(t)){ if(!landParentReady(t)) return; addVertex(e.latlng); }
   else if(t==='source'||t==='join'||t==='delivery') addPoint(t,snap(e.latlng));
   else if(t==='pan') deselect();
+}
+// Enforce the hierarchy: a lease needs a parent Site, a building needs a parent Lease.
+function landParentReady(t){
+  if(t==='lease'){ if(!landCtx.site||!landByCode(landCtx.site)){ toast('Select a parent Site for this lease first.'); return false; } }
+  if(t==='building'){ if(!landCtx.lease||!landByCode(landCtx.lease)){ toast('Select a parent Lease for this building first.'); return false; } }
+  return true;
 }
 function onFeatureClick(feat,ev){
   L.DomEvent.stop(ev); const t=state.tool;
   if(t==='delete'){removeFeature(feat);return;}
   if(t==='line'){addVertex(snap(ev.latlng));return;}
+  if(POLY_TYPES.includes(t)){ if(landParentReady(t)) addVertex(ev.latlng); return; }
   if(t==='source'||t==='join'||t==='delivery'){addPoint(t,snap(ev.latlng));return;}
   if(editLine===feat) return;                 // keep editing when clicking the line you're editing
   selectFeature(feat);
@@ -1030,7 +1066,11 @@ function previewLine(mouse){
   draftVerts=L.layerGroup(draftLatLngs.map(ll=>L.marker(ll,{icon:L.divIcon({className:'vertex-dot',html:'<div></div>',iconSize:[14,14],iconAnchor:[7,7]}),interactive:false}))).addTo(map);
 }
 function isVertex(ll){return draftLatLngs.some(v=>v.lat===ll.lat&&v.lng===ll.lng);}
-function finishLine(){if(draftLatLngs.length>=2) commitLine(draftLatLngs.slice());cancelLine();}
+function finishLine(){
+  if(POLY_TYPES.includes(state.tool)){ if(draftLatLngs.length>=3) commitPolygon(draftLatLngs.slice(),state.tool); }
+  else if(draftLatLngs.length>=2) commitLine(draftLatLngs.slice());
+  cancelLine();
+}
 function cancelLine(){draftLatLngs=[];if(draftLayer){map.removeLayer(draftLayer);draftLayer=null;}if(draftVerts){map.removeLayer(draftVerts);draftVerts=null;}}
 
 function newFeature(type,util){
@@ -1043,6 +1083,8 @@ function newFeature(type,util){
     else if(isFlowNet(util)){ props.fromLine=''; props.toLines=[]; }
     else { props.fromLine=''; props.toLine=''; }
   }
+  if(type==='lease'){ props.parentSite=''; }
+  if(type==='building'){ props.parentLease=''; props.parentSite=''; }
   return {id:state.uid,type,util,code,props};
 }
 
@@ -1056,6 +1098,65 @@ function commitLine(latlngs,name,util,defer){
   main.on('click',ev=>onFeatureClick(feat,ev));
   main.bindTooltip(tipText(feat),{className:'feat-tip',direction:'top',opacity:1});
   state.data[feat.util].features.push(feat); applyStatusStyle(feat); if(!defer) afterChange();
+}
+
+/* ---------- Land: Site / Lease / Building polygons ---------- */
+const LAND_STYLE={
+  site:{color:'#2f7d4f',weight:3,opacity:.95,fill:true,fillColor:'#2f7d4f',fillOpacity:.05,dashArray:'8 5'},
+  lease:{color:'#2f7d4f',weight:2,opacity:.9,fill:true,fillColor:'#4aa06f',fillOpacity:.16,dashArray:null},
+  building:{color:'#8a5a2b',weight:1.5,opacity:.95,fill:true,fillColor:'#c08341',fillOpacity:.55,dashArray:null}
+};
+function landFeats(type){ return state.data.land.features.filter(f=>!type||f.type===type); }
+function landByCode(code){ return state.data.land.features.find(f=>f.code===code); }
+function polyArea(latlngs){                      // approximate geodesic area in m²
+  if(!latlngs||latlngs.length<3) return 0;
+  const R=6378137, rad=Math.PI/180; let a=0, n=latlngs.length;
+  for(let i=0;i<n;i++){ const p1=latlngs[i], p2=latlngs[(i+1)%n];
+    a += (p2.lng-p1.lng)*rad * (2 + Math.sin(p1.lat*rad) + Math.sin(p2.lat*rad)); }
+  return Math.abs(a * R * R / 2);
+}
+function fmtArea(m2){
+  if(!m2) return '0';
+  const ac=m2/4046.8564224;
+  if(ac>=0.1) return ac.toFixed(2)+' ac ('+Math.round(m2).toLocaleString()+' m²)';
+  return Math.round(m2*10.7639).toLocaleString()+' ft² ('+Math.round(m2).toLocaleString()+' m²)';
+}
+function commitPolygon(latlngs,type,defer){
+  const feat=newFeature(type,'land'); feat.latlngs=latlngs;
+  if(type==='lease'){ feat.props.parentSite=landCtx.site||''; }
+  if(type==='building'){ const lease=landByCode(landCtx.lease); feat.props.parentLease=landCtx.lease||''; feat.props.parentSite=lease?(lease.props.parentSite||''):''; }
+  const poly=L.polygon(latlngs, LAND_STYLE[type]);
+  feat.poly=poly; feat.layer=poly; poly.addTo(state.data.land.group);
+  poly.on('click',ev=>onFeatureClick(feat,ev));
+  poly.bindTooltip(tipText(feat),{className:'feat-tip',direction:'top',opacity:1});
+  state.data.land.features.push(feat); applyStatusStyle(feat);
+  if(!defer){ afterChange(); selectFeature(feat); }
+  return feat;
+}
+function rebuildPolygon(code,type,props,arr){
+  const latlngs=arr.map(p=>L.latLng(p[0],p[1]));
+  const poly=L.polygon(latlngs, LAND_STYLE[type]||LAND_STYLE.site);
+  const feat={id:code,type,util:'land',code,props,latlngs,poly};
+  feat.layer=poly; poly.addTo(state.data.land.group);
+  poly.on('click',ev=>onFeatureClick(feat,ev));
+  poly.bindTooltip(tipText(feat),{className:'feat-tip',direction:'top',opacity:1});
+  state.data.land.features.push(feat); applyStatusStyle(feat);
+}
+// Show/populate the parent-picker bar that sits below the toolbar in Land mode.
+function updateLandCtx(){
+  const bar=document.getElementById('landCtx'); if(!bar) return;
+  const sel=document.getElementById('landCtxSelect'), lab=document.getElementById('landCtxLabel'), t=state.tool;
+  if(state.util!=='land' || (t!=='lease'&&t!=='building')){ bar.hidden=true; return; }
+  bar.hidden=false;
+  const parentType = t==='lease'?'site':'lease';
+  lab.textContent = t==='lease'?'Lease in Site:':'Building in Lease:';
+  const opts=landFeats(parentType);
+  const key = t==='lease'?'site':'lease';
+  if(!opts.some(o=>o.code===landCtx[key])) landCtx[key]=opts[0]?opts[0].code:'';
+  sel.innerHTML = opts.length ? opts.map(f=>`<option value="${f.code}" ${f.code===landCtx[key]?'selected':''}>${escapeHtml(f.props.name||f.code)}</option>`).join('')
+    : `<option value="">— draw a ${parentType} first —</option>`;
+  sel.disabled=!opts.length;
+  sel.onchange=()=>{ landCtx[key]=sel.value; };
 }
 
 /* ---------- KMZ/KML import: trace lines into the current network ---------- */
@@ -1299,6 +1400,9 @@ function applyStatusStyle(feat){
     } else {
       feat.main.setStyle({dashArray:STATUS_DASH[s]??null,opacity:STATUS_OPACITY[s]??.95});
     }
+  }else if(feat.poly){
+    const base=LAND_STYLE[feat.type]||LAND_STYLE.site;
+    feat.poly.setStyle({dashArray:STATUS_DASH[s]??base.dashArray,opacity:STATUS_OPACITY[s]??base.opacity,fillOpacity:(s==='Abandoned'?base.fillOpacity*0.4:base.fillOpacity)});
   }else{
     const el=feat.marker.getElement(); if(el){const d=el.querySelector('.pt');if(d){d.style.opacity=s==='Abandoned'?.5:1;d.style.borderStyle=(s==='Planned'||s==='Construction')?'dashed':'solid';}}
   }
@@ -1450,6 +1554,7 @@ function selectFeature(feat){
   deselect(); state.selected=feat;
   const accent=UTILS[feat.util].color;
   if(feat.type==='line') halo=L.polyline(feat.latlngs,{color:accent,weight:9,opacity:.25,interactive:false}).addTo(map);
+  else if(POLY_TYPES.includes(feat.type)) halo=L.polygon(feat.latlngs,{color:accent,weight:6,opacity:.55,fill:false,interactive:false}).addTo(map);
   else halo=L.circleMarker(feat.latlng,{radius:13,color:accent,weight:2,dashArray:'3 3',fill:false,interactive:false}).addTo(map);
   highlightRelations(feat);
   renderAttr();
@@ -1570,6 +1675,28 @@ function renderAttr(){
       rel+=`</div>`;
     }
   }
+  if(POLY_TYPES.includes(feat.type)){
+    extra+=`<div class="field"><label>Area</label><div class="ro">${fmtArea(polyArea(feat.latlngs))}</div></div>`;
+    if(feat.type==='lease'){
+      if(feat.props.parentSite && !landByCode(feat.props.parentSite)) feat.props.parentSite='';
+      const sites=landFeats('site');
+      rel=`<div class="rel-block"><div class="field"><label>Parent Site</label><select id="aParentSite"><option value="">— none —</option>${sites.map(s=>`<option value="${s.code}" ${s.code===feat.props.parentSite?'selected':''}>${escapeHtml(s.props.name||s.code)}</option>`).join('')}</select></div>`;
+      if(!feat.props.parentSite) rel+=`<div class="rel-warn">This lease isn’t associated with a Site.</div>`;
+      const nB=landFeats('building').filter(b=>b.props.parentLease===feat.code).length;
+      rel+=`<div class="rel-hint">${nB} building${nB!==1?'s':''} inside this lease.</div></div>`;
+    } else if(feat.type==='building'){
+      if(feat.props.parentLease && !landByCode(feat.props.parentLease)) feat.props.parentLease='';
+      const leases=landFeats('lease');
+      rel=`<div class="rel-block"><div class="field"><label>Parent Lease</label><select id="aParentLease"><option value="">— none —</option>${leases.map(l=>`<option value="${l.code}" ${l.code===feat.props.parentLease?'selected':''}>${escapeHtml(l.props.name||l.code)}</option>`).join('')}</select></div>`;
+      const site=feat.props.parentSite?landByCode(feat.props.parentSite):null;
+      rel+=`<div class="field"><label>Site</label><div class="ro">${site?escapeHtml(site.props.name||site.code):'—'}</div></div>`;
+      if(!feat.props.parentLease) rel+=`<div class="rel-warn">This building isn’t associated with a Lease.</div>`;
+      rel+=`</div>`;
+    } else {
+      const nL=landFeats('lease').filter(l=>l.props.parentSite===feat.code).length;
+      rel=`<div class="rel-block"><div class="rel-hint">${nL} lease${nL!==1?'s':''} inside this site.</div></div>`;
+    }
+  }
   document.getElementById('attrBody').innerHTML=`
     <div class="attr-head"><span class="chip" style="background:${u.color}"></span><span class="role">${role}</span><span class="code">${feat.code}</span></div>
     <div class="field"><label>Name</label><input id="aName" type="text" placeholder="${placeholderFor(feat)}" value="${escapeHtml(feat.props.name)}"></div>
@@ -1578,7 +1705,7 @@ function renderAttr(){
     <div class="field"><label>Network</label><div class="ro">${u.label}</div></div>
     <div class="attr-actions"><button class="btn danger" id="aDelete">Delete</button><button class="btn" id="aDone">Done</button></div>`;
   const nameEl=document.getElementById('aName');
-  nameEl.oninput=()=>{feat.props.name=nameEl.value;feat.layer===feat.marker?feat.marker.setTooltipContent(tipText(feat)):feat.main.setTooltipContent(tipText(feat));};
+  nameEl.oninput=()=>{feat.props.name=nameEl.value;const lyr=feat.marker||feat.main||feat.poly;if(lyr&&lyr.setTooltipContent)lyr.setTooltipContent(tipText(feat));};
   document.getElementById('aStatus').onchange=e=>{feat.props.status=e.target.value;applyStatusStyle(feat);};
   const fiberEl=document.getElementById('aFiber');
   if(fiberEl) fiberEl.onchange=e=>{feat.props.fiberCount=parseInt(e.target.value);};
@@ -1625,6 +1752,11 @@ function renderAttr(){
     row.querySelector('.dn-line').onchange=e=>{ feat.props.toLines[i]=e.target.value; highlightRelations(feat); renderAttr(); };
     row.querySelector('.br-del').onclick=()=>{ feat.props.toLines.splice(i,1); highlightRelations(feat); renderAttr(); };
   });
+  // land hierarchy
+  const psEl=document.getElementById('aParentSite');
+  if(psEl) psEl.onchange=e=>{ feat.props.parentSite=e.target.value; highlightRelations(feat); renderAttr(); };
+  const plEl=document.getElementById('aParentLease');
+  if(plEl) plEl.onchange=e=>{ feat.props.parentLease=e.target.value; const lease=landByCode(e.target.value); feat.props.parentSite=lease?(lease.props.parentSite||''):''; highlightRelations(feat); renderAttr(); };
   document.getElementById('aDelete').onclick=()=>removeFeature(feat);
   document.getElementById('aDone').onclick=()=>deselect();
 }
@@ -1803,7 +1935,7 @@ function handleFibClick(node){
   if(armed&&armed.side!==info.side){ doConnect(armed,info); armed=null; updateArmed(); drawWires(); return; } // connect across
   armed=info; updateArmed();                                                                            // arm / re-arm
 }
-function placeholderFor(feat){const ex={line:'e.g. Span A-12',source:'e.g. CO North',join:'e.g. SP-204',delivery:'e.g. 118 Oak St'};return ex[feat.type];}
+function placeholderFor(feat){const ex={line:'e.g. Span A-12',source:'e.g. CO North',join:'e.g. SP-204',delivery:'e.g. 118 Oak St',site:'e.g. North Field',lease:'e.g. Lease 12-A',building:'e.g. Warehouse 3'};return ex[feat.type];}
 function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function lineLength(feat){let m=0;for(let i=1;i<feat.latlngs.length;i++)m+=map.distance(feat.latlngs[i-1],feat.latlngs[i]);return m;}
 function fmtLen(m){return m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';}
@@ -1812,14 +1944,14 @@ function fmtLen(m){return m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';}
 function counts(util){const c={line:0,source:0,join:0,delivery:0};state.data[util].features.forEach(f=>c[f.type]++);c.total=state.data[util].features.length;return c;}
 function renderLegend(){
   const u=UTILS[state.util];
-  document.getElementById('legend').innerHTML=[
-    ['sym-line','Line',u.terms.line],['sym-source','Source',u.terms.source],
-    ['sym-join','Join',u.terms.join],['sym-delivery','Delivery',u.terms.delivery]
-  ].map(([s,role,term])=>`<div class="legend-row"><span class="sym"><span class="${s}"></span></span><span><div class="role">${role}</div><div class="term">${term}</div></span></div>`).join('');
+  const rows = state.util==='land'
+    ? [['sym-site','Site',u.terms.site],['sym-lease','Lease',u.terms.lease],['sym-building','Building',u.terms.building]]
+    : [['sym-line','Line',u.terms.line],['sym-source','Source',u.terms.source],['sym-join','Join',u.terms.join],['sym-delivery','Delivery',u.terms.delivery]];
+  document.getElementById('legend').innerHTML=rows.map(([s,role,term])=>`<div class="legend-row"><span class="sym"><span class="${s}"></span></span><span><div class="role">${role}</div><div class="term">${term}</div></span></div>`).join('');
 }
 function renderLayers(){
   const wrap=document.getElementById('layers'); wrap.innerHTML='';
-  for(const id of ORDER){
+  for(const id of MODES){
     const u=UTILS[id],d=state.data[id],row=document.createElement('div');
     row.className='layer-row'+(d.visible?' on':''); row.style.setProperty('--u',u.color);
     row.innerHTML=`<span class="check"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-6"/></svg></span><span class="lc"></span><span class="ln">${u.label}</span><span class="cnt tnum">${counts(id).total}</span>`;
@@ -1827,10 +1959,16 @@ function renderLayers(){
   }
 }
 function toggleLayer(id){const d=state.data[id];d.visible=!d.visible;if(d.visible)d.group.addTo(map);else map.removeLayer(d.group);renderLayers();}
-function renderTotals(){const c=counts(state.util);document.getElementById('totals').innerHTML=`<span class="pill"><b>${c.line}</b> lines</span><span class="pill"><b>${c.source}</b> sources</span><span class="pill"><b>${c.join}</b> joins</span><span class="pill"><b>${c.delivery}</b> deliveries</span>`;}
+function renderTotals(){
+  if(state.util==='land'){
+    const f=state.data.land.features, nS=f.filter(x=>x.type==='site').length, nL=f.filter(x=>x.type==='lease').length, nB=f.filter(x=>x.type==='building').length;
+    document.getElementById('totals').innerHTML=`<span class="pill"><b>${nS}</b> sites</span><span class="pill"><b>${nL}</b> leases</span><span class="pill"><b>${nB}</b> buildings</span>`;
+    return;
+  }
+  const c=counts(state.util);document.getElementById('totals').innerHTML=`<span class="pill"><b>${c.line}</b> lines</span><span class="pill"><b>${c.source}</b> sources</span><span class="pill"><b>${c.join}</b> joins</span><span class="pill"><b>${c.delivery}</b> deliveries</span>`;}
 function renderTipNote(){document.getElementById('tipNote').textContent=`Snapping is on — vertices and nodes lock onto nearby ${UTILS[state.util].label.toLowerCase()} points so segments connect cleanly.`;}
-function updateRailCounts(){for(const id of ORDER) document.querySelector(`[data-ct="${id}"]`).textContent=counts(id).total;}
-function afterChange(){recomputeRisers();renderLayers();renderTotals();updateRailCounts();document.getElementById('stCount').textContent=ORDER.reduce((s,id)=>s+counts(id).total,0); if(mainView==='builder'&&builder.map) syncBuilder();}
+function updateRailCounts(){for(const id of MODES){const el=document.querySelector(`[data-ct="${id}"]`); if(el) el.textContent=counts(id).total;}}
+function afterChange(){recomputeRisers();renderLayers();renderTotals();updateRailCounts();document.getElementById('stCount').textContent=MODES.reduce((s,id)=>s+counts(id).total,0); if(mainView==='builder'&&builder.map) syncBuilder();}
 
 /* ---------- risers: auto-placed where aerial meets underground ---------- */
 function coincident(a,b){return Math.abs(a.lat-b.lat)<1e-7 && Math.abs(a.lng-b.lng)<1e-7;}
@@ -1982,18 +2120,18 @@ async function persistClients(obj){ await Store.set(CLIENTS_KEY,JSON.stringify(o
 
 function serializeProject(){
   const out={uid:state.uid, networks:{}};
-  ORDER.forEach(id=>{
+  MODES.forEach(id=>{
     out.networks[id]={features: state.data[id].features.map(f=>({
       type:f.type, code:f.code, props:f.props,
-      latlngs: f.type==='line'? f.latlngs.map(ll=>[ll.lat,ll.lng]) : undefined,
-      latlng:  f.type!=='line'? [f.latlng.lat,f.latlng.lng] : undefined
+      latlngs: f.latlngs? f.latlngs.map(ll=>[ll.lat,ll.lng]) : undefined,
+      latlng:  f.latlng?  [f.latlng.lat,f.latlng.lng] : undefined
     }))};
   });
   return out;
 }
 function clearAllNetworks(){
   deselect(); clearTrace(); closeTrace(); closeFiberTable(); if(fiberModal) closeMatrix();
-  ORDER.forEach(id=>{
+  MODES.forEach(id=>{
     const d=state.data[id];
     if(d.group) map.removeLayer(d.group);   // drop the old group and everything inside it
     d.group=L.layerGroup();
@@ -2026,9 +2164,10 @@ function rebuildPoint(util,code,type,props,arr){
 function loadProject(proj){
   clearAllNetworks();
   state.uid = proj.uid || 1;
-  ORDER.forEach(id=>{
+  MODES.forEach(id=>{
     ((proj.networks[id]||{}).features||[]).forEach(f=>{
       if(f.type==='line') rebuildLine(id,f.code,f.props,f.latlngs);
+      else if(POLY_TYPES.includes(f.type)) rebuildPolygon(f.code,f.type,f.props,f.latlngs);
       else rebuildPoint(id,f.code,f.type,f.props,f.latlng);
     });
   });
@@ -2251,7 +2390,7 @@ function renderDashboard(){
 }
 
 /* actions */
-function fitNetwork(){const all=[];ORDER.forEach(id=>state.data[id].features.forEach(f=>{if(f.type==='line')f.latlngs.forEach(ll=>all.push(ll));else all.push(f.latlng);}));if(all.length)map.fitBounds(L.latLngBounds(all).pad(0.25));}
+function fitNetwork(){const all=[];MODES.forEach(id=>state.data[id].features.forEach(f=>{if(f.latlngs)f.latlngs.forEach(ll=>all.push(ll));else if(f.latlng)all.push(f.latlng);}));if(all.length)map.fitBounds(L.latLngBounds(all).pad(0.25));}
 function clearActive(){const d=state.data[state.util];if(!d.features.length)return;if(!confirm(`Clear all ${UTILS[state.util].label} features? This cannot be undone.`))return;deselect();if(d.group)map.removeLayer(d.group);d.group=L.layerGroup();if(d.visible)d.group.addTo(map);d.features=[];d.risers=[];afterChange();}
 function exportGeoJSON(){
   const features=[];
