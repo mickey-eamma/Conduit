@@ -428,6 +428,35 @@
   .btn.edit-geo.active{color:#fff;background:#1f2430;border-color:#1f2430}
   .btn.edit-geo.active:hover{filter:brightness(1.1)}
 
+  /* ---- Event History modal ---- */
+  .eh-modal{position:fixed;inset:0;z-index:3200;display:flex;align-items:center;justify-content:center;background:rgba(28,32,38,.5);backdrop-filter:blur(2px);padding:24px}
+  .eh-dialog{background:#fff;width:min(720px,96vw);max-height:88vh;border-radius:14px;box-shadow:0 30px 80px -22px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+  .eh-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .eh-head .t{font-weight:700;font-size:15.5px;display:flex;align-items:center;gap:9px}
+  .eh-head .code{font-size:11px;font-weight:600;color:var(--ink-faint);background:var(--panel-2);border:1px solid var(--line-soft);padding:3px 8px;border-radius:6px;font-variant-numeric:tabular-nums}
+  .eh-head .x{flex:0 0 auto;width:30px;height:30px;border:1px solid var(--line);background:var(--panel);border-radius:8px;color:var(--ink-dim);font-size:19px;line-height:1;cursor:pointer}
+  .eh-head .x:hover{color:var(--ink);background:var(--panel-2)}
+  .eh-body{padding:18px;overflow:auto;background:var(--panel-2)}
+  .eh-asset{display:grid;grid-template-columns:1fr 1fr 1fr;border:2px solid #24408f;border-radius:10px;overflow:hidden;background:#fff;margin-bottom:16px}
+  .eh-cell,.ev-cell{border-right:1px solid #24408f;border-bottom:1px solid #24408f;padding:8px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .eh-asset .eh-cell:nth-child(3){border-right:none}
+  .eh-asset .eh-cell.span2{grid-column:span 2}
+  .eh-asset .eh-cell:nth-child(4),.eh-asset .eh-cell:nth-child(5){border-bottom:none}
+  .eh-cell label,.ev-cell label,.ev-desc label{font-size:10.5px;font-weight:700;color:#24408f;text-transform:uppercase;letter-spacing:.4px}
+  .eh-cell input,.ev-cell input,.ev-desc input{border:none;outline:none;font-family:var(--ui);font-size:13.5px;color:var(--ink);background:transparent;width:100%;padding:1px 0}
+  .eh-erow{display:flex;align-items:flex-start;gap:11px;margin-bottom:12px}
+  .eh-erow .ev-ctrl{flex:0 0 auto;width:30px;height:30px;margin-top:8px;border-radius:50%;border:2px solid #24408f;background:#fff;color:#24408f;font-size:20px;font-weight:700;line-height:1;cursor:pointer;display:grid;place-items:center}
+  .eh-erow .ev-ctrl:hover{background:#eef2fb}
+  .eh-event{flex:1;min-width:0;border:2px solid #24408f;border-radius:10px;overflow:hidden;background:#fff}
+  .eh-event .ev-top{display:grid;grid-template-columns:1fr 1fr 1fr}
+  .eh-event .ev-cell:nth-child(3){border-right:none}
+  .eh-event .ev-desc{padding:8px 12px;display:flex;flex-direction:column;gap:3px}
+  .eh-empty{font-size:12.5px;color:var(--ink-faint);text-align:center;padding:6px 0 12px}
+  .eh-addwrap{text-align:center;margin-top:2px}
+  .eh-add{display:inline-flex;align-items:center;gap:8px;font-family:var(--ui);font-size:14px;font-weight:700;color:#24408f;background:#e8eefc;border:1.5px solid #b9ccf5;border-radius:24px;padding:11px 26px;cursor:pointer}
+  .eh-add:hover{background:#dbe6fb}
+  .btn.eh-btn{width:100%;justify-content:center;margin-top:4px;font-size:12.5px}
+
   .fiber-modal{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(28,32,38,.46);backdrop-filter:blur(2px)}
   .fiber-dialog{background:#fff;width:min(640px,95vw);max-height:88vh;border-radius:16px;box-shadow:0 30px 80px -22px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
   .fiber-dlg-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
@@ -787,7 +816,7 @@ const TOOLS = {
 
 const state={ util:'telecom', tool:'pan', snap:true, uid:1, selected:null, data:{} };
 let map, draftLatLngs=[], draftLayer=null, draftVerts=null, halo=null, grat=null, tilesOk=false, relHalos=[];
-let fiberModal=null, currentSplice=null, dragWire=null, armed=null;
+let fiberModal=null, currentSplice=null, dragWire=null, armed=null, ehModal=null, ehFeat=null;
 let fiberTableModal=null, traceModal=null, traceHalos=[], flowHalos=[], flowModal=null;
 
 function initMap(){
@@ -1411,6 +1440,8 @@ function renderAttr(){
       extra+=`<div class="field"><label>Placement</label><select id="aPlace"><option ${pl==='Aerial'?'selected':''}>Aerial</option><option ${pl==='Underground'?'selected':''}>Underground</option></select></div>`;
     }
     extra+=`<div class="field"><label>Length</label><div class="ro">${fmtLen(lineLength(feat))}</div></div>`;
+    const ehN=(feat.props.eventHistory&&feat.props.eventHistory.events&&feat.props.eventHistory.events.length)||0;
+    extra+=`<button class="btn eh-btn" id="aEvents">Event History${ehN?` · ${ehN}`:''}</button>`;
     extra+=`<button class="btn edit-geo${isEditingLine(feat)?' active':''}" id="aEditGeo">${isEditingLine(feat)?'Done editing geometry':'Edit geometry'}</button>`;
     if(feat.util==='telecom') extra+=`<button class="btn matrix" id="aTrace">Trace fibers</button>`;
     if(isFlowNet(feat.util)) extra+=`<button class="btn flow" id="aFlow">Trace downstream</button><button class="btn flow up" id="aFlowUp">Trace upstream</button>`;
@@ -1476,6 +1507,8 @@ function renderAttr(){
   if(placeEl) placeEl.onchange=e=>{feat.props.placement=e.target.value;applyStatusStyle(feat);recomputeRisers();};
   const traceEl=document.getElementById('aTrace');
   if(traceEl) traceEl.onclick=()=>openFiberTable(feat);
+  const eventsEl=document.getElementById('aEvents');
+  if(eventsEl) eventsEl.onclick=()=>openEventHistory(feat);
   const editGeoEl=document.getElementById('aEditGeo');
   if(editGeoEl) editGeoEl.onclick=()=>toggleEditGeometry(feat);
   const flowEl=document.getElementById('aFlow');
@@ -3417,7 +3450,62 @@ async function deployAssetMap(){
   setTimeout(()=>URL.revokeObjectURL(u),60000);
 }
 
+/* ---------- Event History: per-line asset + event log ---------- */
+function ehData(feat){
+  if(!feat.props.eventHistory) feat.props.eventHistory={assetName:feat.props.name||'',projectNo:'',projectDate:'',manufacturer:'',description:'',events:[]};
+  const d=feat.props.eventHistory; if(!Array.isArray(d.events)) d.events=[]; return d;
+}
+function closeEventHistory(){ if(ehModal){ehModal.remove();ehModal=null;} ehFeat=null; if(state.selected) renderAttr(); }
+function openEventHistory(feat){
+  closeEventHistory();
+  ehFeat=feat; const d=ehData(feat);
+  ehModal=document.createElement('div'); ehModal.className='eh-modal';
+  ehModal.innerHTML=`<div class="eh-dialog">
+    <div class="eh-head"><div class="t">Event History <span class="code">${escapeHtml(feat.code)}</span></div><button class="x" id="ehX">&times;</button></div>
+    <div class="eh-body">
+      <div class="eh-asset">
+        <div class="eh-cell"><label>Asset Name</label><input id="ehAsset" value="${escapeHtml(d.assetName||'')}"></div>
+        <div class="eh-cell"><label>Project No.</label><input id="ehProjNo" value="${escapeHtml(d.projectNo||'')}"></div>
+        <div class="eh-cell"><label>Project Date</label><input id="ehProjDate" type="date" value="${escapeHtml(d.projectDate||'')}"></div>
+        <div class="eh-cell span2"><label>Manufacturer</label><input id="ehMfr" value="${escapeHtml(d.manufacturer||'')}"></div>
+        <div class="eh-cell"><label>Description</label><input id="ehDesc" value="${escapeHtml(d.description||'')}"></div>
+      </div>
+      <div id="ehEvents"></div>
+      <div class="eh-addwrap"><button class="eh-add" id="ehAdd">&#65291; Add Event</button></div>
+    </div></div>`;
+  document.body.appendChild(ehModal);
+  ehModal.querySelector('#ehX').onclick=closeEventHistory;
+  ehModal.addEventListener('pointerdown',e=>{ if(e.target===ehModal) closeEventHistory(); });
+  const bind=(id,k)=>{ const el=ehModal.querySelector('#'+id); el.oninput=()=>{ d[k]=el.value; }; };
+  bind('ehAsset','assetName'); bind('ehProjNo','projectNo'); bind('ehProjDate','projectDate'); bind('ehMfr','manufacturer'); bind('ehDesc','description');
+  ehModal.querySelector('#ehAdd').onclick=()=>{ d.events.push({no:String(d.events.length+1),title:'',date:'',desc:''}); renderEhEvents(); };
+  renderEhEvents();
+}
+function renderEhEvents(){
+  if(!ehModal||!ehFeat) return;
+  const d=ehData(ehFeat), host=ehModal.querySelector('#ehEvents');
+  host.innerHTML=d.events.map((ev,i)=>`<div class="eh-erow" data-i="${i}">
+      <button class="ev-ctrl" title="Remove event">&#8722;</button>
+      <div class="eh-event">
+        <div class="ev-top">
+          <div class="ev-cell"><label>Event No.</label><input class="ev-no" value="${escapeHtml(ev.no||'')}"></div>
+          <div class="ev-cell"><label>Event Title</label><input class="ev-title" value="${escapeHtml(ev.title||'')}"></div>
+          <div class="ev-cell"><label>Event Date</label><input class="ev-date" type="date" value="${escapeHtml(ev.date||'')}"></div>
+        </div>
+        <div class="ev-desc"><label>Event Description</label><input class="ev-descf" value="${escapeHtml(ev.desc||'')}"></div>
+      </div></div>`).join('') || '<p class="eh-empty">No events yet — use “Add Event” below.</p>';
+  host.querySelectorAll('.eh-erow').forEach(row=>{
+    const i=+row.dataset.i, ev=d.events[i];
+    row.querySelector('.ev-no').oninput=e=>ev.no=e.target.value;
+    row.querySelector('.ev-title').oninput=e=>ev.title=e.target.value;
+    row.querySelector('.ev-date').oninput=e=>ev.date=e.target.value;
+    row.querySelector('.ev-descf').oninput=e=>ev.desc=e.target.value;
+    row.querySelector('.ev-ctrl').onclick=()=>{ d.events.splice(i,1); renderEhEvents(); };
+  });
+}
+
 document.addEventListener('keydown',e=>{
+  if(ehModal){ if(e.key==='Escape') closeEventHistory(); return; }
   if(fiberModal){ if(e.key==='Escape') closeMatrix(); return; }
   if(fiberTableModal){ if(e.key==='Escape') closeFiberTable(); return; }
   if(traceModal){ if(e.key==='Escape') closeTrace(); return; }
