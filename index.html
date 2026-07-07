@@ -597,8 +597,8 @@
       </div>
       <div id="map"></div>
       <div class="import-ctl">
-        <button class="btn import-btn" id="importBtn" title="Import a KMZ/KML and trace its lines into a network">&#8613; Import KMZ</button>
-        <input type="file" id="importFile" accept=".kmz,.kml,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml" hidden>
+        <button class="btn import-btn" id="importBtn" title="Import a KMZ/KML/DWG and trace its lines into a network">&#8613; Import KMZ / DWG</button>
+        <input type="file" id="importFile" accept=".kmz,.kml,.dwg,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml,image/vnd.dwg,application/acad" hidden>
         <select class="import-net" id="importNet" title="Add imported lines to this network" hidden></select>
         <button class="btn import-all" id="importAll" hidden>Add all (<span id="importCount2">0</span>)</button>
         <button class="btn import-clear" id="importClear" hidden>Clear import (<span id="importCount">0</span>)</button>
@@ -1048,11 +1048,45 @@ function renderImport(lines){
 }
 async function onImportFile(file){
   if(!file) return;
+  const nm=(file.name||'').toLowerCase();
   try{
-    const lines=await parseImportFile(file);
-    if(!lines.length) toast('No lines (LineStrings) found in that file.');
+    let lines;
+    if(nm.endsWith('.dwg')){ toast('Reading DWG…'); lines=await parseDwgFile(file); }
+    else lines=await parseImportFile(file);
+    if(!lines.length) toast('No lines found in that file.');
     else renderImport(lines);
   }catch(err){ toast('Import failed: '+(err&&err.message||err)); }
+}
+/* DWG import via LibreDWG (WASM), lazy-loaded from CDN. Coordinates are taken as lng/lat (X=lng, Y=lat). */
+let _libredwg=null;
+async function getLibreDwg(){
+  if(!_libredwg){
+    const mod=await import('https://esm.run/@mlightcad/libredwg-web@0.7.7');
+    _libredwg=await mod.LibreDwg.create();
+  }
+  return _libredwg;
+}
+function dwgEntityLatLngs(e){
+  let pts=null;
+  if(e.type==='LINE' && e.startPoint && e.endPoint){
+    pts=[[e.startPoint.x,e.startPoint.y],[e.endPoint.x,e.endPoint.y]];
+  } else if((e.type==='LWPOLYLINE'||e.type==='POLYLINE2D'||e.type==='POLYLINE3D') && Array.isArray(e.vertices)){
+    pts=e.vertices.map(v=>[v.x,v.y]);
+    if((e.flag&1) && pts.length>=2) pts.push([pts[0][0],pts[0][1]]);   // closed polyline -> close the ring
+  }
+  if(!pts) return null;
+  const ll=pts.filter(p=>isFinite(p[0])&&isFinite(p[1])).map(p=>L.latLng(p[1],p[0]));   // x=lng, y=lat
+  return ll.length>=2 ? ll : null;
+}
+async function parseDwgFile(file){
+  const buf=await file.arrayBuffer();
+  const lib=await getLibreDwg();
+  const dwg=lib.dwg_read_data(buf, 0 /* Dwg_File_Type.DWG */);
+  if(!dwg) throw new Error('Couldn’t read the DWG — it may be an unsupported version. Try saving it as an older DWG or as DXF.');
+  let db; try{ db=lib.convert(dwg); } finally { try{ lib.dwg_free(dwg); }catch(e){} }
+  const out=[];
+  (db.entities||[]).forEach(e=>{ const ll=dwgEntityLatLngs(e); if(ll) out.push({name:(e.layer||('DWG '+e.type)), latlngs:ll}); });
+  return out;
 }
 function addPoint(type,latlng){
   const feat=newFeature(type); feat.latlng=latlng;
