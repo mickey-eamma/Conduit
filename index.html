@@ -132,6 +132,9 @@
   .cx-br{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;padding:4px 0}
   .cx-br .bn{color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cx-br .bv{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .cx-note{font-size:11px;color:var(--ink-faint);padding:4px 0 2px}
+  .cx-addparcels{width:100%;margin-top:8px;justify-content:center;background:color-mix(in srgb,#4f6d7a 12%,#fff);border-color:color-mix(in srgb,#4f6d7a 40%,transparent);color:#3c5866;font-weight:600}
+  .cx-addparcels:hover{background:color-mix(in srgb,#4f6d7a 20%,#fff)}
   @media(max-width:900px){.cx-side{flex-basis:230px;width:230px}.cx-panel{flex-basis:240px}}
 
   /* ---- Map Builder ---- */
@@ -2835,13 +2838,78 @@ function cxCountLine(lineLL,geojson){
   });
   return {count,pts};
 }
+// --- polygon layers: count each polygon once (intersected = boundary crossed OR line vertex inside) ---
+function cxIsPolygonLayer(gj){ return (gj.features||[]).some(f=>f.geometry&&(f.geometry.type==='Polygon'||f.geometry.type==='MultiPolygon')); }
+function cxPointInRing(pt,ring){
+  let inside=false; const x=pt[0],y=pt[1];
+  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+    const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
+    if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/((yj-yi)||1e-12)+xi)) inside=!inside;
+  }
+  return inside;
+}
+function cxRingsInside(pt,rings){ if(!cxPointInRing(pt,rings[0])) return false; for(let k=1;k<rings.length;k++){ if(cxPointInRing(pt,rings[k])) return false; } return true; }
+function cxPointInGeom(pt,g){
+  if(!g) return false;
+  if(g.type==='Polygon') return cxRingsInside(pt,g.coordinates);
+  if(g.type==='MultiPolygon') return g.coordinates.some(poly=>cxRingsInside(pt,poly));
+  return false;
+}
+function cxLinePolyHits(lineLL,geojson){
+  const A=lineLL.map(ll=>[ll.lng,ll.lat]); const hit=new Set(), pts=[];
+  (geojson.features||[]).forEach((f,fi)=>{
+    if(!f.geometry) return; let hitThis=false;
+    cxGeomPaths(f.geometry).forEach(path=>{
+      for(let i=1;i<A.length;i++) for(let j=1;j<path.length;j++){
+        const p=cxSegPoint(A[i-1],A[i],path[j-1],path[j]);
+        if(p){ hitThis=true; pts.push(p); }
+      }
+    });
+    if(!hitThis && A.some(pt=>cxPointInGeom(pt,f.geometry))) hitThis=true;
+    if(hitThis) hit.add(fi);
+  });
+  return {hit,pts};
+}
+function cxFeaturePolys(g){                 // outer rings only, one per polygon
+  if(!g) return [];
+  if(g.type==='Polygon') return [g.coordinates[0]];
+  if(g.type==='MultiPolygon') return g.coordinates.map(p=>p[0]);
+  return [];
+}
+function cxParcelName(f){
+  const p=f.properties||{};
+  const keys=['PARCELID','ParcelID','parcel_id','PARCEL_ID','PIN','APN','APN_TEXT','NAME','Name','OWNER','Owner','SITEADDRESS','SiteAddress','ADDRESS','Address'];
+  for(const k of keys){ if(p[k]!=null && String(p[k]).trim()) return String(p[k]).trim(); }
+  return '';
+}
+function cxAddHitParcels(id){
+  const rec=crossings.arcgisLayers.find(r=>r.id===id); if(!rec||!rec._x||!rec._x.hitIdx) return;
+  const feats=rec.geojson.features||[]; let added=0;
+  rec._x.hitIdx.forEach(fi=>{
+    const f=feats[fi]; if(!f) return;
+    cxFeaturePolys(f.geometry).forEach(ring=>{
+      const latlngs=ring.map(c=>L.latLng(c[1],c[0]));
+      if(latlngs.length>1){ const a=latlngs[0],b=latlngs[latlngs.length-1]; if(a.lat===b.lat&&a.lng===b.lng) latlngs.pop(); }
+      if(latlngs.length>=3){ const pf=commitPolygon(latlngs,'parcel',true); const nm=cxParcelName(f); if(nm) pf.props.name=nm; added++; }
+    });
+  });
+  if(added){ afterChange(); toast(`Added ${added} parcel${added!==1?'s':''} to Asset Manager · Land ▸ Parcels.`); }
+  else toast('No polygon geometry found to add.');
+}
 function computeCrossings(){
   const sel=cxAllLines().filter(l=>crossings.selected.has(l.code));
   crossings.arcgisLayers.forEach(rec=>{
     if(rec.kind!=='features'){ rec._x={na:true,total:0,perLine:{},pts:[]}; return; }
-    let total=0; const perLine={}, pts=[];
-    sel.forEach(l=>{ const r=cxCountLine(l.latlngs,rec.geojson); if(r.count){ perLine[l.code]=r.count; total+=r.count; r.pts.forEach(p=>pts.push(p)); } });
-    rec._x={na:false,total,perLine,pts};
+    if(cxIsPolygonLayer(rec.geojson)){
+      // polygons: each polygon counts once (per line, and once overall for the layer total)
+      const layerHit=new Set(), perLine={}, pts=[];
+      sel.forEach(l=>{ const r=cxLinePolyHits(l.latlngs,rec.geojson); if(r.hit.size){ perLine[l.code]=r.hit.size; r.hit.forEach(fi=>layerHit.add(fi)); r.pts.forEach(p=>pts.push(p)); } });
+      rec._x={na:false,total:layerHit.size,perLine,pts,isPolygon:true,hitIdx:[...layerHit]};
+    } else {
+      let total=0; const perLine={}, pts=[];
+      sel.forEach(l=>{ const r=cxCountLine(l.latlngs,rec.geojson); if(r.count){ perLine[l.code]=r.count; total+=r.count; r.pts.forEach(p=>pts.push(p)); } });
+      rec._x={na:false,total,perLine,pts,isPolygon:false};
+    }
   });
 }
 function syncCrossings(){
@@ -2896,14 +2964,17 @@ function renderCxSummary(){
         ${x.na?'<span class="na">raster · n/a</span>':`<span class="ct${x.total?'':' zero'}">${x.total}</span>`}</div>`;
     if(!x.na){
       let body='';
+      if(x.isPolygon) body+=`<div class="cx-note">Polygons crossed — each counted once${x.perLine&&Object.keys(x.perLine).length?' per line':''}.</div>`;
       if(codesHit.length) codesHit.forEach(code=>{ body+=`<div class="cx-br"><span class="bn">${escapeHtml(nameByCode[code]||code)}</span><span class="bv">${x.perLine[code]}</span></div>`; });
-      else body='<div class="cx-br"><span class="bn">No crossings with selected lines</span><span class="bv">0</span></div>';
+      else body+='<div class="cx-br"><span class="bn">No crossings with selected lines</span><span class="bv">0</span></div>';
+      if(x.isPolygon && x.total) body+=`<button class="btn cx-addparcels" data-id="${rec.id}">Add ${x.total} parcel${x.total!==1?'s':''} to Asset Manager</button>`;
       html+=`<div class="cx-lyr-body">${body}</div>`;
     }
     html+='</div>';
   });
   host.innerHTML=html;
   host.querySelectorAll('.cx-lyr').forEach(el=>{ const id=el.dataset.id; el.querySelector('.cx-lyr-head').onclick=()=>{ crossings.expanded[id]=!crossings.expanded[id]; el.classList.toggle('open',crossings.expanded[id]); }; });
+  host.querySelectorAll('.cx-addparcels').forEach(b=>b.onclick=e=>{ e.stopPropagation(); cxAddHitParcels(b.dataset.id); });
 }
 /* --- crossings ArcGIS loader (reuses the generic ags fetch helpers) --- */
 function cxStatus(msg,isErr){ const el=document.getElementById('cxStatus'); if(!el) return; el.textContent=msg||''; el.classList.toggle('err',!!isErr); el.classList.toggle('show',!!msg); }
