@@ -481,6 +481,17 @@
   .eh-addwrap{text-align:center;margin-top:2px}
   .eh-add{display:inline-flex;align-items:center;gap:8px;font-family:var(--ui);font-size:14px;font-weight:700;color:#24408f;background:#e8eefc;border:1.5px solid #b9ccf5;border-radius:24px;padding:11px 26px;cursor:pointer}
   .eh-add:hover{background:#dbe6fb}
+  .eh-stages #ehStageList{margin-bottom:14px}
+  .stage-bar{display:flex;align-items:center;gap:11px;background:#24408f;color:#fff;border-radius:9px;padding:15px 17px;margin-bottom:12px;cursor:pointer;font-weight:800;font-size:17px;letter-spacing:.6px;text-transform:uppercase;transition:background .12s}
+  .stage-bar:hover{background:#2d4ea8}
+  .stage-bar .sb-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stage-bar .sb-del{flex:0 0 auto;width:24px;height:24px;border:none;background:rgba(255,255,255,.16);color:#fff;border-radius:6px;font-size:16px;line-height:1;cursor:pointer;opacity:0;transition:opacity .12s}
+  .stage-bar:hover .sb-del{opacity:1}
+  .stage-bar .sb-del:hover{background:rgba(255,255,255,.32)}
+  .stage-bar .sb-go{flex:0 0 auto;font-size:15px;opacity:.92}
+  .eh-back{background:none;border:none;color:var(--ink-dim);font-size:19px;line-height:1;cursor:pointer;padding:0 3px 0 0;font-weight:700}
+  .eh-back:hover{color:var(--ink)}
+  .eh-stagename{text-transform:uppercase;letter-spacing:.5px}
   .btn.eh-btn{width:100%;justify-content:center;margin-top:4px;font-size:12.5px}
 
   .fiber-modal{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(28,32,38,.46);backdrop-filter:blur(2px)}
@@ -881,7 +892,7 @@ const TOOLS = {
 
 const state={ util:'telecom', tool:'pan', snap:true, uid:1, selected:null, data:{} };
 let map, draftLatLngs=[], draftLayer=null, draftVerts=null, halo=null, grat=null, tilesOk=false, relHalos=[];
-let fiberModal=null, currentSplice=null, dragWire=null, armed=null, ehModal=null, ehFeat=null;
+let fiberModal=null, currentSplice=null, dragWire=null, armed=null, ehModal=null, ehFeat=null, ehStageIdx=-1;
 let fiberTableModal=null, traceModal=null, traceHalos=[], flowHalos=[], flowModal=null;
 
 function initMap(){
@@ -1505,7 +1516,9 @@ function renderAttr(){
       extra+=`<div class="field"><label>Placement</label><select id="aPlace"><option ${pl==='Aerial'?'selected':''}>Aerial</option><option ${pl==='Underground'?'selected':''}>Underground</option></select></div>`;
     }
     extra+=`<div class="field"><label>Length</label><div class="ro">${fmtLen(lineLength(feat))}</div></div>`;
-    const ehN=(feat.props.eventHistory&&feat.props.eventHistory.events&&feat.props.eventHistory.events.length)||0;
+    const ehSt=feat.props.stages;
+    const ehN=Array.isArray(ehSt) ? ehSt.reduce((s,st)=>s+((st.events&&st.events.length)||0),0)
+      : ((feat.props.eventHistory&&feat.props.eventHistory.events&&feat.props.eventHistory.events.length)||0);
     extra+=`<button class="btn eh-btn" id="aEvents">Event History${ehN?` · ${ehN}`:''}</button>`;
     extra+=`<button class="btn edit-geo${isEditingLine(feat)?' active':''}" id="aEditGeo">${isEditingLine(feat)?'Done editing geometry':'Edit geometry'}</button>`;
     if(feat.util==='telecom') extra+=`<button class="btn matrix" id="aTrace">Trace fibers</button>`;
@@ -3618,17 +3631,51 @@ async function deployAssetMap(){
 }
 
 /* ---------- Event History: per-line asset + event log ---------- */
-function ehData(feat){
-  if(!feat.props.eventHistory) feat.props.eventHistory={assetName:feat.props.name||'',projectNo:'',projectDate:'',manufacturer:'',description:'',events:[]};
-  const d=feat.props.eventHistory; if(!Array.isArray(d.events)) d.events=[]; return d;
+const DEFAULT_STAGES=['Design','Order','Installation','Testing'];
+function newStage(name){ return {name:name||'Stage',assetName:'',projectNo:'',projectDate:'',manufacturer:'',description:'',events:[]}; }
+function ehStages(feat){
+  if(!Array.isArray(feat.props.stages)){
+    const legacy=feat.props.eventHistory;
+    if(legacy && (legacy.assetName||legacy.projectNo||legacy.manufacturer||legacy.description||(legacy.events&&legacy.events.length)))
+      feat.props.stages=[Object.assign(newStage('General'),legacy)];
+    else feat.props.stages=DEFAULT_STAGES.map(newStage);
+    if('eventHistory' in feat.props) delete feat.props.eventHistory;
+  }
+  feat.props.stages.forEach(s=>{ if(!Array.isArray(s.events)) s.events=[]; });
+  return feat.props.stages;
 }
-function closeEventHistory(){ if(ehModal){ehModal.remove();ehModal=null;} ehFeat=null; if(state.selected) renderAttr(); }
+function closeEventHistory(){ if(ehModal){ehModal.remove();ehModal=null;} ehFeat=null; ehStageIdx=-1; if(state.selected) renderAttr(); }
 function openEventHistory(feat){
   closeEventHistory();
-  ehFeat=feat; const d=ehData(feat);
+  ehFeat=feat; ehStageIdx=-1; ehStages(feat);
   ehModal=document.createElement('div'); ehModal.className='eh-modal';
+  document.body.appendChild(ehModal);
+  ehModal.addEventListener('pointerdown',e=>{ if(e.target===ehModal) closeEventHistory(); });
+  renderStagesView();
+}
+function renderStagesView(){
+  if(!ehModal||!ehFeat) return; ehStageIdx=-1;
+  const feat=ehFeat, stages=ehStages(feat);
   ehModal.innerHTML=`<div class="eh-dialog">
     <div class="eh-head"><div class="t">Event History <span class="code">${escapeHtml(feat.code)}</span></div><button class="x" id="ehX">&times;</button></div>
+    <div class="eh-body eh-stages">
+      <div id="ehStageList">${stages.map((s,i)=>`<div class="stage-bar" data-i="${i}"><span class="sb-name">${escapeHtml(s.name||'Stage')}</span><button class="sb-del" title="Remove stage">&times;</button><span class="sb-go">&#9654;</span></div>`).join('')||'<p class="eh-empty">No stages yet — add one below.</p>'}</div>
+      <div class="eh-addwrap"><button class="eh-add" id="ehAddStage">&#65291; Add Stage</button></div>
+    </div></div>`;
+  ehModal.querySelector('#ehX').onclick=closeEventHistory;
+  ehModal.querySelector('#ehAddStage').onclick=()=>{ const nm=(prompt('New stage name:')||'').trim(); if(!nm) return; stages.push(newStage(nm)); renderStagesView(); };
+  ehModal.querySelectorAll('.stage-bar').forEach(bar=>{
+    const i=+bar.dataset.i;
+    bar.onclick=e=>{ if(e.target.closest('.sb-del')) return; renderStageEventsView(i); };
+    bar.querySelector('.sb-del').onclick=e=>{ e.stopPropagation(); if(!confirm('Remove stage “'+(stages[i].name||'Stage')+'”? Its events will be deleted.')) return; stages.splice(i,1); renderStagesView(); };
+  });
+}
+function renderStageEventsView(i){
+  if(!ehModal||!ehFeat) return;
+  const stages=ehStages(ehFeat), d=stages[i]; if(!d) return renderStagesView();
+  ehStageIdx=i;
+  ehModal.innerHTML=`<div class="eh-dialog">
+    <div class="eh-head"><div class="t"><button class="eh-back" id="ehBack" title="Back to stages">&#8592;</button><span class="eh-stagename">${escapeHtml(d.name||'Stage')}</span><span class="code">${escapeHtml(ehFeat.code)}</span></div><button class="x" id="ehX">&times;</button></div>
     <div class="eh-body">
       <div class="eh-asset">
         <div class="eh-cell"><label>Asset Name</label><input id="ehAsset" value="${escapeHtml(d.assetName||'')}"></div>
@@ -3640,17 +3687,17 @@ function openEventHistory(feat){
       <div id="ehEvents"></div>
       <div class="eh-addwrap"><button class="eh-add" id="ehAdd">&#65291; Add Event</button></div>
     </div></div>`;
-  document.body.appendChild(ehModal);
   ehModal.querySelector('#ehX').onclick=closeEventHistory;
-  ehModal.addEventListener('pointerdown',e=>{ if(e.target===ehModal) closeEventHistory(); });
+  ehModal.querySelector('#ehBack').onclick=renderStagesView;
   const bind=(id,k)=>{ const el=ehModal.querySelector('#'+id); el.oninput=()=>{ d[k]=el.value; }; };
   bind('ehAsset','assetName'); bind('ehProjNo','projectNo'); bind('ehProjDate','projectDate'); bind('ehMfr','manufacturer'); bind('ehDesc','description');
-  ehModal.querySelector('#ehAdd').onclick=()=>{ d.events.push({no:String(d.events.length+1),title:'',date:'',desc:''}); renderEhEvents(); };
-  renderEhEvents();
+  ehModal.querySelector('#ehAdd').onclick=()=>{ d.events.push({no:String(d.events.length+1),title:'',date:'',desc:''}); renderStageEvents(); };
+  renderStageEvents();
 }
-function renderEhEvents(){
-  if(!ehModal||!ehFeat) return;
-  const d=ehData(ehFeat), host=ehModal.querySelector('#ehEvents');
+function renderStageEvents(){
+  if(!ehModal||ehStageIdx<0) return;
+  const d=ehStages(ehFeat)[ehStageIdx]; if(!d) return;
+  const host=ehModal.querySelector('#ehEvents');
   host.innerHTML=d.events.map((ev,i)=>`<div class="eh-erow" data-i="${i}">
       <button class="ev-ctrl" title="Remove event">&#8722;</button>
       <div class="eh-event">
@@ -3672,7 +3719,7 @@ function renderEhEvents(){
 }
 
 document.addEventListener('keydown',e=>{
-  if(ehModal){ if(e.key==='Escape') closeEventHistory(); return; }
+  if(ehModal){ if(e.key==='Escape'){ if(ehStageIdx>=0) renderStagesView(); else closeEventHistory(); } return; }
   if(fiberModal){ if(e.key==='Escape') closeMatrix(); return; }
   if(fiberTableModal){ if(e.key==='Escape') closeFiberTable(); return; }
   if(traceModal){ if(e.key==='Escape') closeTrace(); return; }
