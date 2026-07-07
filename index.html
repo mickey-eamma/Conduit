@@ -464,6 +464,7 @@
   .eh-head .x:hover{color:var(--ink);background:var(--panel-2)}
   .eh-body{padding:18px;overflow:auto;background:var(--panel-2)}
   .eh-asset{display:grid;grid-template-columns:1fr 1fr 1fr;border:2px solid #24408f;border-radius:10px;overflow:hidden;background:#fff;margin-bottom:16px}
+  .eh-sub{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin:2px 0 10px}
   .eh-cell,.ev-cell{border-right:1px solid #24408f;border-bottom:1px solid #24408f;padding:8px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
   .eh-asset .eh-cell:nth-child(3){border-right:none}
   .eh-asset .eh-cell.span2{grid-column:span 2}
@@ -3632,22 +3633,44 @@ async function deployAssetMap(){
 
 /* ---------- Event History: per-line asset + event log ---------- */
 const DEFAULT_STAGES=['Design','Order','Installation','Testing'];
-function newStage(name){ return {name:name||'Stage',assetName:'',projectNo:'',projectDate:'',manufacturer:'',description:'',events:[]}; }
+function newStage(name){ return {name:name||'Stage',events:[]}; }
 function ehStages(feat){
   if(!Array.isArray(feat.props.stages)){
     const legacy=feat.props.eventHistory;
-    if(legacy && (legacy.assetName||legacy.projectNo||legacy.manufacturer||legacy.description||(legacy.events&&legacy.events.length)))
-      feat.props.stages=[Object.assign(newStage('General'),legacy)];
+    if(legacy && legacy.events && legacy.events.length) feat.props.stages=[{name:'General',events:legacy.events}];
     else feat.props.stages=DEFAULT_STAGES.map(newStage);
-    if('eventHistory' in feat.props) delete feat.props.eventHistory;
   }
   feat.props.stages.forEach(s=>{ if(!Array.isArray(s.events)) s.events=[]; });
   return feat.props.stages;
 }
+// One asset record per line, shared by the stages page and every sub-stage page.
+function ehAsset(feat){
+  if(!feat.props.asset){
+    let src=feat.props.eventHistory;
+    if(!src && Array.isArray(feat.props.stages)) src=feat.props.stages.find(s=>s.assetName||s.projectNo||s.projectDate||s.manufacturer||s.description);
+    src=src||{};
+    feat.props.asset={ assetName:src.assetName||feat.props.name||'', projectNo:src.projectNo||'', projectDate:src.projectDate||'', manufacturer:src.manufacturer||'', description:src.description||'' };
+  }
+  return feat.props.asset;
+}
+function ehAssetTableHTML(a){
+  return `<div class="eh-asset">
+    <div class="eh-cell"><label>Asset Name</label><input id="ehAsset" value="${escapeHtml(a.assetName||'')}"></div>
+    <div class="eh-cell"><label>Project No.</label><input id="ehProjNo" value="${escapeHtml(a.projectNo||'')}"></div>
+    <div class="eh-cell"><label>Project Date</label><input id="ehProjDate" type="date" value="${escapeHtml(a.projectDate||'')}"></div>
+    <div class="eh-cell span2"><label>Manufacturer</label><input id="ehMfr" value="${escapeHtml(a.manufacturer||'')}"></div>
+    <div class="eh-cell"><label>Description</label><input id="ehDesc" value="${escapeHtml(a.description||'')}"></div>
+  </div>`;
+}
+function ehBindAsset(a){
+  const bind=(id,k)=>{ const el=ehModal.querySelector('#'+id); if(el) el.oninput=()=>{ a[k]=el.value; }; };
+  bind('ehAsset','assetName'); bind('ehProjNo','projectNo'); bind('ehProjDate','projectDate'); bind('ehMfr','manufacturer'); bind('ehDesc','description');
+}
 function closeEventHistory(){ if(ehModal){ehModal.remove();ehModal=null;} ehFeat=null; ehStageIdx=-1; if(state.selected) renderAttr(); }
 function openEventHistory(feat){
   closeEventHistory();
-  ehFeat=feat; ehStageIdx=-1; ehStages(feat);
+  ehFeat=feat; ehStageIdx=-1; ehAsset(feat); ehStages(feat);
+  if('eventHistory' in feat.props) delete feat.props.eventHistory;
   ehModal=document.createElement('div'); ehModal.className='eh-modal';
   document.body.appendChild(ehModal);
   ehModal.addEventListener('pointerdown',e=>{ if(e.target===ehModal) closeEventHistory(); });
@@ -3659,10 +3682,13 @@ function renderStagesView(){
   ehModal.innerHTML=`<div class="eh-dialog">
     <div class="eh-head"><div class="t">Event History <span class="code">${escapeHtml(feat.code)}</span></div><button class="x" id="ehX">&times;</button></div>
     <div class="eh-body eh-stages">
+      ${ehAssetTableHTML(ehAsset(feat))}
+      <h4 class="eh-sub">Stages</h4>
       <div id="ehStageList">${stages.map((s,i)=>`<div class="stage-bar" data-i="${i}"><span class="sb-name">${escapeHtml(s.name||'Stage')}</span><button class="sb-del" title="Remove stage">&times;</button><span class="sb-go">&#9654;</span></div>`).join('')||'<p class="eh-empty">No stages yet — add one below.</p>'}</div>
       <div class="eh-addwrap"><button class="eh-add" id="ehAddStage">&#65291; Add Stage</button></div>
     </div></div>`;
   ehModal.querySelector('#ehX').onclick=closeEventHistory;
+  ehBindAsset(ehAsset(feat));
   ehModal.querySelector('#ehAddStage').onclick=()=>{ const nm=(prompt('New stage name:')||'').trim(); if(!nm) return; stages.push(newStage(nm)); renderStagesView(); };
   ehModal.querySelectorAll('.stage-bar').forEach(bar=>{
     const i=+bar.dataset.i;
@@ -3677,20 +3703,14 @@ function renderStageEventsView(i){
   ehModal.innerHTML=`<div class="eh-dialog">
     <div class="eh-head"><div class="t"><button class="eh-back" id="ehBack" title="Back to stages">&#8592;</button><span class="eh-stagename">${escapeHtml(d.name||'Stage')}</span><span class="code">${escapeHtml(ehFeat.code)}</span></div><button class="x" id="ehX">&times;</button></div>
     <div class="eh-body">
-      <div class="eh-asset">
-        <div class="eh-cell"><label>Asset Name</label><input id="ehAsset" value="${escapeHtml(d.assetName||'')}"></div>
-        <div class="eh-cell"><label>Project No.</label><input id="ehProjNo" value="${escapeHtml(d.projectNo||'')}"></div>
-        <div class="eh-cell"><label>Project Date</label><input id="ehProjDate" type="date" value="${escapeHtml(d.projectDate||'')}"></div>
-        <div class="eh-cell span2"><label>Manufacturer</label><input id="ehMfr" value="${escapeHtml(d.manufacturer||'')}"></div>
-        <div class="eh-cell"><label>Description</label><input id="ehDesc" value="${escapeHtml(d.description||'')}"></div>
-      </div>
+      ${ehAssetTableHTML(ehAsset(ehFeat))}
+      <h4 class="eh-sub">${escapeHtml(d.name||'Stage')} events</h4>
       <div id="ehEvents"></div>
       <div class="eh-addwrap"><button class="eh-add" id="ehAdd">&#65291; Add Event</button></div>
     </div></div>`;
   ehModal.querySelector('#ehX').onclick=closeEventHistory;
   ehModal.querySelector('#ehBack').onclick=renderStagesView;
-  const bind=(id,k)=>{ const el=ehModal.querySelector('#'+id); el.oninput=()=>{ d[k]=el.value; }; };
-  bind('ehAsset','assetName'); bind('ehProjNo','projectNo'); bind('ehProjDate','projectDate'); bind('ehMfr','manufacturer'); bind('ehDesc','description');
+  ehBindAsset(ehAsset(ehFeat));
   ehModal.querySelector('#ehAdd').onclick=()=>{ d.events.push({no:String(d.events.length+1),title:'',date:'',desc:''}); renderStageEvents(); };
   renderStageEvents();
 }
