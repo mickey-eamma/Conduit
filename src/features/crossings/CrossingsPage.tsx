@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
-import type L from 'leaflet';
-import { CX_DEFAULTS } from '../../domain/constants';
+import L from 'leaflet';
+import { BASEMAPS, CX_DEFAULTS } from '../../domain/constants';
 import { useInvalidateOnVisible } from '../../leaflet/useInvalidateOnVisible';
 import { useLazyMapInit } from '../../leaflet/useLazyMapInit';
 import { useLeafletMap } from '../../leaflet/useLeafletMap';
@@ -43,6 +43,17 @@ function CrossingsInner({ isVisible, network }: { isVisible: boolean; network: N
   const defaultsLoadedRef = useRef(false);
 
   useInvalidateOnVisible(mapRef, isVisible);
+
+  // Crossings only ever shows the gray basemap (no switcher) — mirrors the
+  // original's `initCrossings()` adding these tile layers once, up front.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const layers = BASEMAPS.gray.layers.map(([url, opts]) => L.tileLayer(url, opts).addTo(map));
+    return () => {
+      for (const l of layers) map.removeLayer(l);
+    };
+  }, [mapRef]);
 
   const arcgis = useArcgisLayers(mapRef, { idPrefix: 'c', palette: CROSSINGS_PALETTE });
   const allLines = cxAllLines(network);
