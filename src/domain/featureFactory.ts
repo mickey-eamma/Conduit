@@ -32,6 +32,11 @@ export function createFeature(
       props.toLine = '';
     }
   }
+  if (type === 'lease') props.parentSite = '';
+  if (type === 'building') {
+    props.parentLease = '';
+    props.parentSite = '';
+  }
 
   return {
     feature: { id: String(uid), type, util, code, props } as Omit<Feature, 'latlngs' | 'latlng'>,

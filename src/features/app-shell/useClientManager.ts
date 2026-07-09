@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type Dispatch } from 'react';
-import { ORDER } from '../../domain/constants';
+import { MODES } from '../../domain/constants';
 import { defaultProject } from '../../lib/geojsonProject';
 import { deserializeProject, loadClients, persistClients, serializeProject, LAST_KEY, type SerializedProject } from '../../lib/persistence';
 import { Store } from '../../lib/store';
@@ -19,7 +19,7 @@ export interface UseClientManagerResult {
 }
 
 function hasAnyFeatures(network: NetworkState): boolean {
-  return ORDER.some((id) => network.networks[id].features.length > 0);
+  return MODES.some((id) => network.networks[id].features.length > 0);
 }
 
 /**

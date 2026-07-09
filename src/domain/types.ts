@@ -1,10 +1,12 @@
 import type { FeatureCollection } from 'geojson';
 
-export type UtilId = 'telecom' | 'water' | 'electric' | 'oilgas';
+export type UtilId = 'telecom' | 'water' | 'electric' | 'oilgas' | 'land' | 'parcel';
 
-export type FeatureType = 'line' | 'source' | 'join' | 'delivery';
+export type FeatureType = 'line' | 'source' | 'join' | 'delivery' | 'site' | 'lease' | 'building' | 'parcel';
 
-export type ToolId = 'pan' | 'line' | 'source' | 'join' | 'delivery' | 'delete';
+export type PolyType = 'site' | 'lease' | 'building' | 'parcel';
+
+export type ToolId = 'pan' | 'line' | 'source' | 'join' | 'delivery' | 'site' | 'lease' | 'building' | 'parcel' | 'delete';
 
 export type StatusName = 'Active' | 'Construction' | 'Planned' | 'Abandoned';
 
@@ -54,6 +56,34 @@ export interface FeatureProps {
 
   // electric join (simple 1:1)
   toLine?: string;
+
+  // land: lease -> parent site; building -> parent lease (+ denormalized parent site)
+  parentSite?: string;
+  parentLease?: string;
+
+  // event history (line-only) — one shared asset record + any number of named stages
+  asset?: AssetRecord;
+  stages?: EventStage[];
+}
+
+export interface AssetRecord {
+  assetName: string;
+  projectNo: string;
+  projectDate: string;
+  manufacturer: string;
+  description: string;
+}
+
+export interface EventRecord {
+  no: string;
+  title: string;
+  date: string;
+  desc: string;
+}
+
+export interface EventStage {
+  name: string;
+  events: EventRecord[];
 }
 
 interface BaseFeature {
@@ -73,7 +103,16 @@ export interface PointFeature extends BaseFeature {
   latlng: LatLng;
 }
 
-export type Feature = LineFeature | PointFeature;
+export interface PolygonFeature extends BaseFeature {
+  type: PolyType;
+  latlngs: LatLng[];
+}
+
+export type Feature = LineFeature | PointFeature | PolygonFeature;
+
+export function isPolygonFeature(f: Feature): f is PolygonFeature {
+  return f.type !== 'line' && 'latlngs' in f;
+}
 
 export interface RiserPoint {
   id: string;

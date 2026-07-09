@@ -1,6 +1,6 @@
 import type { ToolId, UtilId } from '../../domain/types';
 
-export type MainView = 'assets' | 'crossings' | 'builder';
+export type MainView = 'assets' | 'crossings' | 'builder' | 'networkdesign';
 export type ActiveView = 'map' | 'dashboard';
 
 export interface ToastState {

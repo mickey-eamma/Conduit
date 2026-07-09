@@ -1,4 +1,4 @@
-import { TOOLS, UTILS } from '../../domain/constants';
+import { toolsFor, TOOLS, UTILS } from '../../domain/constants';
 import type { ToolId, UtilId } from '../../domain/types';
 
 interface ToolbarProps {
@@ -7,14 +7,18 @@ interface ToolbarProps {
   onSelect: (tool: ToolId) => void;
 }
 
-const TOOL_ORDER: ToolId[] = ['pan', 'line', 'source', 'join', 'delivery', 'delete'];
+function isSepBefore(t: ToolId, util: UtilId): boolean {
+  if (util === 'land') return t === 'site' || t === 'delete';
+  if (util === 'parcel') return t === 'parcel' || t === 'delete';
+  return t === 'source' || t === 'delete';
+}
 
 export function Toolbar({ active, currentUtil, onSelect }: ToolbarProps) {
   return (
     <div className="toolbar">
-      {TOOL_ORDER.map((t) => (
+      {toolsFor(currentUtil).map((t) => (
         <span key={t} style={{ display: 'contents' }}>
-          {(t === 'source' || t === 'delete') && <div className="tool-sep" />}
+          {isSepBefore(t, currentUtil) && <div className="tool-sep" />}
           <button
             type="button"
             className={`tool${t === active ? ' active' : ''}`}

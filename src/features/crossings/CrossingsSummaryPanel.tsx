@@ -10,6 +10,7 @@ interface CrossingsSummaryPanelProps {
   crossingResults: Record<string, CxLayerCrossing>;
   expanded: Record<string, boolean>;
   onToggleExpanded: (id: string) => void;
+  onAddParcels: (rec: ArcgisLayerRecord) => void;
 }
 
 export function CrossingsSummaryPanel({
@@ -19,6 +20,7 @@ export function CrossingsSummaryPanel({
   crossingResults,
   expanded,
   onToggleExpanded,
+  onAddParcels,
 }: CrossingsSummaryPanelProps) {
   const selN = selected.size;
 
@@ -43,10 +45,21 @@ export function CrossingsSummaryPanel({
           <CxLayerCard
             key={rec.id}
             rec={rec}
-            result={crossingResults[rec.id] ?? { id: rec.id, na: rec.kind !== 'features', total: 0, perLine: {}, points: [] }}
+            result={
+              crossingResults[rec.id] ?? {
+                id: rec.id,
+                na: rec.kind !== 'features',
+                total: 0,
+                perLine: {},
+                points: [],
+                isPolygon: false,
+                hitIndices: [],
+              }
+            }
             nameByCode={nameByCode}
             expanded={!!expanded[rec.id]}
             onToggleExpanded={() => onToggleExpanded(rec.id)}
+            onAddParcels={() => onAddParcels(rec)}
           />
         ))}
       </>

@@ -1,24 +1,29 @@
 import { useEffect, useRef } from 'react';
 import { useUi } from '../../state/ui/UiContext';
 import { useNetwork } from '../../state/network/NetworkContext';
-import { totalFeatureCount, counts } from '../../state/network/networkSelectors';
+import { totalFeatureCount, counts, landFeatsByType } from '../../state/network/networkSelectors';
 import { useInvalidateOnVisible } from '../../leaflet/useInvalidateOnVisible';
 import { useAssetMap } from './useAssetMap';
 import { useAssetMapInteractions } from './useAssetMapInteractions';
 import { useGeometryEditing } from './useGeometryEditing';
 import { useHalo } from './useHalo';
 import { useRisers } from './useRisers';
+import { useLandContext } from './useLandContext';
+import { usePolygonLayerSync } from './usePolygonLayerSync';
 import { useFiberModals } from './fiber/useFiberModals';
 import { SpliceMatrixModal } from './fiber/SpliceMatrixModal';
 import { FiberCableTableModal } from './fiber/FiberCableTableModal';
 import { SignalTraceModal } from './fiber/SignalTraceModal';
 import { useFlowTrace } from './flow/useFlowTrace';
 import { FlowTraceModal } from './flow/FlowTraceModal';
+import { useEventHistory } from './useEventHistory';
+import { EventHistoryModal } from './EventHistoryModal';
 import { useImportPreview } from './useImportPreview';
 import { ImportControls } from './ImportControls';
 import { BasemapNote } from './BasemapNote';
 import { UtilRail } from './UtilRail';
 import { Toolbar } from './Toolbar';
+import { LandContextBar } from './LandContextBar';
 import { HintPill } from './HintPill';
 import { StatusBar } from './StatusBar';
 import { AttributePanel } from './AttributePanel';
@@ -27,7 +32,7 @@ import { NetworkVisibilityList } from './NetworkVisibilityList';
 import { TotalsPanel } from './TotalsPanel';
 import { ViewTabs } from './ViewTabs';
 import { cursorForTool } from './hintText';
-import { ORDER, UTILS } from '../../domain/constants';
+import { MODES, UTILS } from '../../domain/constants';
 import type { UtilId } from '../../domain/types';
 import { DashboardPage } from '../dashboard/DashboardPage';
 
@@ -37,22 +42,26 @@ export function AssetManagerPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { mapRef, basemapNoteVisible, dismissBasemapNote } = useAssetMap(containerRef);
   const isActive = ui.mainView === 'assets' && ui.activeView === 'map';
+  const { landCtx, setSite, setLease } = useLandContext();
 
   useInvalidateOnVisible(mapRef, isActive);
 
   const fiberModals = useFiberModals(mapRef, network);
   const flowTrace = useFlowTrace(mapRef, network);
+  const eventHistory = useEventHistory(network, networkDispatch);
 
-  const { coords, layerAccess } = useAssetMapInteractions(
+  const { coords, layerAccess, handleFeatureClick } = useAssetMapInteractions(
     mapRef,
     ui,
     uiDispatch,
     network,
     networkDispatch,
     isActive,
-    fiberModals.isAnyOpen || !!flowTrace.trace,
+    fiberModals.isAnyOpen || !!flowTrace.trace || !!eventHistory.feature,
     fiberModals.openMatrix,
+    landCtx,
   );
+  usePolygonLayerSync(mapRef, network, handleFeatureClick);
   useHalo(mapRef, network, ui.selectedUtil, ui.selectedFeatureId);
   useRisers(network, layerAccess);
   const geometryEditing = useGeometryEditing(
@@ -72,7 +81,7 @@ export function AssetManagerPage() {
     document.documentElement.style.setProperty('--accent', UTILS[ui.selectedUtil].color);
   }, [ui.selectedUtil]);
 
-  const railCounts = Object.fromEntries(ORDER.map((id) => [id, counts(network, id).total])) as Record<
+  const railCounts = Object.fromEntries(MODES.map((id) => [id, counts(network, id).total])) as Record<
     UtilId,
     number
   >;
@@ -86,6 +95,15 @@ export function AssetManagerPage() {
       />
       <main className="map-area" data-cursor={cursorForTool(ui.tool)}>
         <Toolbar active={ui.tool} currentUtil={ui.selectedUtil} onSelect={(tool) => uiDispatch({ type: 'SET_TOOL', tool })} />
+        <LandContextBar
+          tool={ui.tool}
+          util={ui.selectedUtil}
+          landCtx={landCtx}
+          onSiteChange={setSite}
+          onLeaseChange={setLease}
+          sites={landFeatsByType(network, 'site')}
+          leases={landFeatsByType(network, 'lease')}
+        />
         <ViewTabs active={ui.activeView} onChange={(view) => uiDispatch({ type: 'SET_ACTIVE_VIEW', view })} />
         <div id="map" ref={containerRef} />
         <ImportControls importPreview={importPreview} />
@@ -105,6 +123,7 @@ export function AssetManagerPage() {
             onOpenMatrix={fiberModals.openMatrix}
             onOpenFiberTable={fiberModals.openCableTable}
             onTraceFlow={flowTrace.runTrace}
+            onOpenEventHistory={eventHistory.open}
           />
         </section>
         <section>
@@ -156,6 +175,7 @@ export function AssetManagerPage() {
         />
       )}
       {flowTrace.trace && <FlowTraceModal network={network} trace={flowTrace.trace} onClose={flowTrace.closeTrace} />}
+      {eventHistory.feature && <EventHistoryModal eventHistory={eventHistory} />}
       {ui.activeView === 'dashboard' && <DashboardPage network={network} />}
     </>
   );

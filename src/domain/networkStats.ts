@@ -22,7 +22,9 @@ export function netStats(network: NetworkState, util: UtilId): NetStats {
   for (const l of lines) meters += lineLengthMeters(l.latlngs);
 
   const cnt = { line: lines.length, source: 0, join: 0, delivery: 0 };
-  for (const f of features) if (f.type !== 'line') cnt[f.type]++;
+  for (const f of features) {
+    if (f.type === 'source' || f.type === 'join' || f.type === 'delivery') cnt[f.type]++;
+  }
 
   const byStatus: Record<StatusName, number> = { Active: 0, Construction: 0, Planned: 0, Abandoned: 0 };
   for (const f of features) byStatus[f.props.status]++;

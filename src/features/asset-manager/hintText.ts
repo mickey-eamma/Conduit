@@ -1,4 +1,4 @@
-import { UTILS } from '../../domain/constants';
+import { isPathTool, TOOLS, UTILS } from '../../domain/constants';
 import type { ToolId, UtilId } from '../../domain/types';
 
 export function hintText(tool: ToolId, util: UtilId): string {
@@ -9,22 +9,27 @@ export function hintText(tool: ToolId, util: UtilId): string {
     source: `Click the map to place a ${term('source').toLowerCase()} — where the commodity originates.`,
     join: `Click to drop a ${term('join').toLowerCase()}, then pick the two lines it connects.`,
     delivery: `Click to place a ${term('delivery').toLowerCase()} — where service is delivered.`,
+    site: 'Click to lay the corners of a Site boundary. Double-click or Enter to close · Esc to cancel.',
+    lease: 'Pick a parent Site above, then click to draw the Lease boundary inside it. Double-click or Enter to close.',
+    building: 'Pick a parent Lease above, then click to draw the Building footprint inside it. Double-click or Enter to close.',
+    parcel: 'Click to lay the corners of a parcel. Double-click or Enter to close · Esc to cancel.',
     delete: 'Click any feature on the map to remove it.',
   };
   return msg[tool];
 }
 
+/** Mirrors main's `adaptiveLabel`: driven generically by each tool's own label + role, so it covers site/lease/building/parcel for free. */
 export function toolStatusLabel(tool: ToolId, util: UtilId): string {
   if (tool === 'pan') return 'Select';
   if (tool === 'delete') return 'Delete';
-  const role = (['line', 'source', 'join', 'delivery'] as const).find((r) => r === tool);
-  if (!role) return tool;
-  const label = tool === 'line' ? 'Draw' : 'Place';
-  return `${label} ${UTILS[util].terms[role].split(' / ')[0].toLowerCase()}`;
+  const def = TOOLS[tool];
+  if (!def.role) return def.label;
+  const term = UTILS[util].terms[def.role] ?? def.role;
+  return `${def.label} ${term.split(' / ')[0].toLowerCase()}`;
 }
 
 export function cursorForTool(tool: ToolId): 'draw' | 'delete' | 'pan' {
-  if (tool === 'line' || tool === 'source' || tool === 'join' || tool === 'delivery') return 'draw';
+  if (isPathTool(tool) || tool === 'source' || tool === 'join' || tool === 'delivery') return 'draw';
   if (tool === 'delete') return 'delete';
   return 'pan';
 }

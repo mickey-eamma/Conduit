@@ -1,13 +1,15 @@
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState, type Dispatch } from 'react';
 import L from 'leaflet';
 import { BASEMAPS, CX_DEFAULTS } from '../../domain/constants';
+import { parcelNameFromProps, polygonRings } from '../../domain/crossingsMath';
+import type { ArcgisLayerRecord } from '../../domain/types';
 import { useInvalidateOnVisible } from '../../leaflet/useInvalidateOnVisible';
 import { useLazyMapInit } from '../../leaflet/useLazyMapInit';
 import { useLeafletMap } from '../../leaflet/useLeafletMap';
 import { agsQueryFeatures, type Bbox } from '../../lib/arcgisRest';
 import { useArcgisLayers } from '../../shared/hooks/useArcgisLayers';
 import { useNetwork } from '../../state/network/NetworkContext';
-import type { NetworkState } from '../../state/network/networkTypes';
+import type { NetworkAction, NetworkState } from '../../state/network/networkTypes';
 import { useUi } from '../../state/ui/UiContext';
 import { cxAllLines } from './cxAllLines';
 import { CrossingsCanvas } from './CrossingsCanvas';
@@ -15,19 +17,26 @@ import { CrossingsSummaryPanel } from './CrossingsSummaryPanel';
 import { crossingsReducer, initialCrossingsState } from './crossingsState';
 import { CxArcgisPanel } from './CxArcgisPanel';
 import { LineChecklist } from './LineChecklist';
-import { useCrossingResults } from './useCrossingResults';
+import { useCrossingResults, type CxLayerCrossing } from './useCrossingResults';
 import { useCrossingsMap } from './useCrossingsMap';
 
 const CROSSINGS_PALETTE = ['#2563eb', '#db2777', '#059669', '#d97706', '#7c3aed', '#0d9488', '#dc2626', '#4338ca'];
 
 /** Lazily mounts on first visit to the Crossings tab, then stays mounted (CSS-hidden). */
 export function CrossingsPage() {
-  const { state: ui } = useUi();
-  const { state: network } = useNetwork();
+  const { state: ui, dispatch: uiDispatch } = useUi();
+  const { state: network, dispatch: networkDispatch } = useNetwork();
   const initiated = useLazyMapInit(ui.mainView === 'crossings');
 
   if (!initiated) return <div className="crossings" id="crossings" />;
-  return <CrossingsInner isVisible={ui.mainView === 'crossings'} network={network} />;
+  return (
+    <CrossingsInner
+      isVisible={ui.mainView === 'crossings'}
+      network={network}
+      networkDispatch={networkDispatch}
+      onToast={(message) => uiDispatch({ type: 'SHOW_TOAST', message })}
+    />
+  );
 }
 
 function boundsToBbox(map: L.Map): Bbox {
@@ -35,7 +44,14 @@ function boundsToBbox(map: L.Map): Bbox {
   return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
 }
 
-function CrossingsInner({ isVisible, network }: { isVisible: boolean; network: NetworkState }) {
+interface CrossingsInnerProps {
+  isVisible: boolean;
+  network: NetworkState;
+  networkDispatch: Dispatch<NetworkAction>;
+  onToast: (message: string) => void;
+}
+
+function CrossingsInner({ isVisible, network, networkDispatch, onToast }: CrossingsInnerProps) {
   const [state, dispatch] = useReducer(crossingsReducer, initialCrossingsState);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useLeafletMap(containerRef, { zoomControl: true, center: [32.74, -97.05], zoom: 12 });
@@ -84,6 +100,37 @@ function CrossingsInner({ isVisible, network }: { isVisible: boolean; network: N
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once, when the map first exists
   }, [mapRef]);
 
+  function handleAddParcels(rec: ArcgisLayerRecord) {
+    const result: CxLayerCrossing | undefined = crossingResults[rec.id];
+    if (!rec.geojson || !result?.hitIndices.length) return;
+    const feats = rec.geojson.features;
+    let added = 0;
+    for (const fi of result.hitIndices) {
+      const f = feats[fi];
+      if (!f) continue;
+      for (const ring of polygonRings(f.geometry)) {
+        const latlngs = ring.map(([lng, lat]) => ({ lat, lng }));
+        if (latlngs.length > 1) {
+          const a = latlngs[0];
+          const b = latlngs[latlngs.length - 1];
+          if (a.lat === b.lat && a.lng === b.lng) latlngs.pop();
+        }
+        if (latlngs.length >= 3) {
+          networkDispatch({
+            type: 'ADD_POLYGON',
+            util: 'parcel',
+            polyType: 'parcel',
+            latlngs,
+            name: parcelNameFromProps(f.properties as Record<string, unknown> | null) || undefined,
+          });
+          added++;
+        }
+      }
+    }
+    if (added) onToast(`Added ${added} parcel${added !== 1 ? 's' : ''} to Asset Manager · Land ▸ Parcels.`);
+    else onToast('No polygon geometry found to add.');
+  }
+
   async function handleReload() {
     const map = mapRef.current;
     const featureLayers = arcgis.layers.filter((r) => r.kind === 'features');
@@ -129,6 +176,7 @@ function CrossingsInner({ isVisible, network }: { isVisible: boolean; network: N
         crossingResults={crossingResults}
         expanded={state.expanded}
         onToggleExpanded={(id) => dispatch({ type: 'TOGGLE_EXPANDED', id })}
+        onAddParcels={handleAddParcels}
       />
     </div>
   );

@@ -1,6 +1,6 @@
-import { GLYPH, UTILS } from '../../domain/constants';
-import { ORDER } from '../../domain/constants';
+import { GLYPH, ORDER, UTILS } from '../../domain/constants';
 import type { UtilId } from '../../domain/types';
+import { LandFlyout } from './LandFlyout';
 
 interface UtilRailProps {
   active: UtilId;
@@ -27,6 +27,13 @@ export function UtilRail({ active, counts, onSelect }: UtilRailProps) {
           </div>
         );
       })}
+      <LandFlyout
+        active={active}
+        landCount={counts.land}
+        parcelCount={counts.parcel}
+        combinedCount={counts.land + counts.parcel}
+        onSelect={onSelect}
+      />
     </nav>
   );
 }

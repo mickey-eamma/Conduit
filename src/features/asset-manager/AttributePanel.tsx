@@ -4,7 +4,9 @@ import { featureById } from '../../state/network/networkSelectors';
 import { placeholderFor } from './attributeText';
 import { LineFields } from './attrFields/LineFields';
 import { JoinFields } from './attrFields/JoinFields';
+import { PolygonFields } from './attrFields/PolygonFields';
 import { Field, ReadOnlyField } from '../../shared/ui/Field';
+import { isPolygonFeature } from '../../domain/types';
 import type { FeatureProps, LineFeature, PointFeature, StatusName } from '../../domain/types';
 import type { NetworkAction, NetworkState } from '../../state/network/networkTypes';
 import type { UiAction, UiState } from '../../state/ui/uiTypes';
@@ -19,6 +21,7 @@ interface AttributePanelProps {
   onOpenMatrix?: (feature: PointFeature) => void;
   onOpenFiberTable?: (line: LineFeature) => void;
   onTraceFlow?: (line: LineFeature, dir: 'up' | 'down') => void;
+  onOpenEventHistory?: (line: LineFeature) => void;
 }
 
 export function AttributePanel({
@@ -30,6 +33,7 @@ export function AttributePanel({
   onOpenMatrix,
   onOpenFiberTable,
   onTraceFlow,
+  onOpenEventHistory,
 }: AttributePanelProps) {
   const feature = ui.selectedFeatureId ? featureById(network, ui.selectedUtil, ui.selectedFeatureId) : undefined;
 
@@ -42,7 +46,7 @@ export function AttributePanel({
   }
 
   const u = UTILS[feature.util];
-  const role = u.terms[feature.type];
+  const role = u.terms[feature.type] ?? feature.type;
 
   function updateProps(props: Partial<FeatureProps>) {
     networkDispatch({ type: 'UPDATE_FEATURE_PROPS', util: feature!.util, id: feature!.id, props });
@@ -78,11 +82,13 @@ export function AttributePanel({
           geometryEditing={geometryEditing}
           onOpenFiberTable={onOpenFiberTable}
           onTraceFlow={onTraceFlow}
+          onOpenEventHistory={onOpenEventHistory}
         />
       )}
       {feature.type === 'join' && (
         <JoinFields feature={feature} network={network} updateProps={updateProps} onOpenMatrix={onOpenMatrix} />
       )}
+      {isPolygonFeature(feature) && <PolygonFields feature={feature} network={network} updateProps={updateProps} />}
       <ReadOnlyField label="Network" value={u.label} />
       <div className="attr-actions">
         <button

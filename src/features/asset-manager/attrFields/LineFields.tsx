@@ -1,3 +1,4 @@
+import { eventCountForLine } from '../../../domain/eventHistory';
 import { isFlowNet } from '../../../domain/flow';
 import { formatLength, lineLengthMeters } from '../../../domain/geometry';
 import { ReadOnlyField } from '../../../shared/ui/Field';
@@ -13,6 +14,7 @@ interface LineFieldsProps {
   geometryEditing: UseGeometryEditingResult;
   onOpenFiberTable?: (line: LineFeature) => void;
   onTraceFlow?: (line: LineFeature, dir: 'up' | 'down') => void;
+  onOpenEventHistory?: (line: LineFeature) => void;
 }
 
 export function LineFields({
@@ -22,8 +24,10 @@ export function LineFields({
   geometryEditing,
   onOpenFiberTable,
   onTraceFlow,
+  onOpenEventHistory,
 }: LineFieldsProps) {
   const isEditing = geometryEditing.editingFeatureId === feature.id;
+  const eventCount = eventCountForLine(feature);
 
   return (
     <>
@@ -31,6 +35,9 @@ export function LineFields({
         <TelecomLineFields feature={feature} telecomFeatures={network.networks.telecom.features} updateProps={updateProps} />
       )}
       <ReadOnlyField label="Length" value={formatLength(lineLengthMeters(feature.latlngs))} />
+      <button type="button" className="btn eh-btn" onClick={() => onOpenEventHistory?.(feature)}>
+        Event History{eventCount ? ` · ${eventCount}` : ''}
+      </button>
       <button
         type="button"
         className={`btn edit-geo${isEditing ? ' active' : ''}`}

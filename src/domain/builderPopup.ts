@@ -14,7 +14,7 @@ export function builderPopupHtml(util: UtilId, feature: Feature, cfg: BuilderLay
   const fields = cfg.popup.fields;
   let h = '';
   if (fields.code !== false) h += `<div class="pp-code">${escapeHtml(feature.code)}</div>`;
-  h += `<div class="pp-name">${escapeHtml(feature.props.name || u.terms[feature.type])}</div>`;
+  h += `<div class="pp-name">${escapeHtml(feature.props.name || u.terms[feature.type] || feature.type)}</div>`;
 
   const rows: [string, string | number | null | undefined][] = [];
   if (fields.type !== false) {

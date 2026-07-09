@@ -1,4 +1,4 @@
-import type { BasemapId, StatusName, ToolId, UtilId } from './types';
+import type { BasemapId, PolyType, StatusName, ToolId, UtilId } from './types';
 
 export const GLYPH: Record<UtilId, string> = {
   telecom:
@@ -7,6 +7,8 @@ export const GLYPH: Record<UtilId, string> = {
   electric: '<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>',
   oilgas:
     '<svg viewBox="0 0 24 24"><path d="M5 21V8l5-3 5 3v13"/><path d="M3 21h18M9 12h2M9 16h2"/><path d="M15 11h3a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2"/></svg>',
+  land: '<svg viewBox="0 0 24 24"><path d="M4 5v14l5-2 6 2 5-2V3l-5 2-6-2-5 2Z"/><path d="M9 3v16M15 5v16"/></svg>',
+  parcel: '<svg viewBox="0 0 24 24"><path d="M4 7 14 4l6 4-2 12-11-1Z"/></svg>',
 };
 
 export interface UtilTerms {
@@ -14,6 +16,10 @@ export interface UtilTerms {
   source: string;
   join: string;
   delivery: string;
+  site?: string;
+  lease?: string;
+  building?: string;
+  parcel?: string;
 }
 
 export interface UtilDef {
@@ -53,15 +59,45 @@ export const UTILS: Record<UtilId, UtilDef> = {
     abbr: 'OIL',
     terms: { line: 'Pipeline', source: 'Wellhead / refinery', join: 'Joint / fitting', delivery: 'City gate / delivery' },
   },
+  land: {
+    label: 'Land',
+    color: '#3f7f4f',
+    abbr: 'LND',
+    terms: { site: 'Site', lease: 'Lease', building: 'Building', line: 'Boundary', source: 'Marker', join: 'Node', delivery: 'Point' },
+  },
+  parcel: {
+    label: 'Parcels',
+    color: '#4f6d7a',
+    abbr: 'PCL',
+    terms: { parcel: 'Parcel', line: 'Boundary', source: 'Marker', join: 'Node', delivery: 'Point' },
+  },
 };
 
+/** The 4 line/point utility networks — fiber/flow/risers/KMZ-import/GeoJSON-export/Map-Builder/Dashboard/Deploy all stay scoped to these. */
 export const ORDER: UtilId[] = ['telecom', 'water', 'electric', 'oilgas'];
 
-export const ROLEABBR: Record<'line' | 'source' | 'join' | 'delivery', string> = {
+/** All 6 data modes, including Land + Parcels — used for rail counts, persistence, and the map-click router. */
+export const MODES: UtilId[] = ['telecom', 'water', 'electric', 'oilgas', 'land', 'parcel'];
+
+/** Sub-modes shown under the single hover-flyout "Land" rail tab. */
+export const LAND_GROUP: UtilId[] = ['land', 'parcel'];
+
+/** Polygon feature types (drawn once, no post-hoc geometry editing). */
+export const POLY_TYPES: PolyType[] = ['site', 'lease', 'building', 'parcel'];
+
+export function isPolyType(t: string): t is PolyType {
+  return (POLY_TYPES as string[]).includes(t);
+}
+
+export const ROLEABBR: Record<'line' | 'source' | 'join' | 'delivery' | 'site' | 'lease' | 'building' | 'parcel', string> = {
   line: 'LN',
   source: 'SRC',
   join: 'JN',
   delivery: 'DLV',
+  site: 'STE',
+  lease: 'LSE',
+  building: 'BLD',
+  parcel: 'LOT',
 };
 
 export const STATUSES: StatusName[] = ['Active', 'Construction', 'Planned', 'Abandoned'];
@@ -112,7 +148,7 @@ export function fiberName(n: number): string {
 export interface ToolDef {
   icon: string;
   label: string;
-  role: 'line' | 'source' | 'join' | 'delivery' | null;
+  role: 'line' | 'source' | 'join' | 'delivery' | 'site' | 'lease' | 'building' | 'parcel' | null;
 }
 
 export const TOOLS: Record<ToolId, ToolDef> = {
@@ -126,6 +162,14 @@ export const TOOLS: Record<ToolId, ToolDef> = {
   source: { icon: '<path d="M12 4 18 10 12 16 6 10Z"/>', label: 'Place', role: 'source' },
   join: { icon: '<circle cx="12" cy="12" r="5"/>', label: 'Place', role: 'join' },
   delivery: { icon: '<rect x="6" y="6" width="12" height="12" rx="2"/>', label: 'Place', role: 'delivery' },
+  site: { icon: '<path d="M12 3 20 9 17 20 7 20 4 9Z"/>', label: 'Draw', role: 'site' },
+  lease: { icon: '<rect x="5" y="7" width="14" height="10" rx="1"/>', label: 'Draw', role: 'lease' },
+  building: {
+    icon: '<path d="M4 21V9l8-5 8 5v12"/><rect x="9" y="13" width="6" height="8"/>',
+    label: 'Draw',
+    role: 'building',
+  },
+  parcel: { icon: '<path d="M4 7 14 4l6 4-2 12-11-1Z"/>', label: 'Draw', role: 'parcel' },
   delete: {
     icon:
       '<path d="M5 7h14M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
@@ -133,6 +177,18 @@ export const TOOLS: Record<ToolId, ToolDef> = {
     role: null,
   },
 };
+
+/** The tool palette for a given util — line/point networks vs. Land (site/lease/building) vs. Parcels. */
+export function toolsFor(util: UtilId): ToolId[] {
+  if (util === 'land') return ['pan', 'site', 'lease', 'building', 'delete'];
+  if (util === 'parcel') return ['pan', 'parcel', 'delete'];
+  return ['pan', 'line', 'source', 'join', 'delivery', 'delete'];
+}
+
+/** A "draw a path by clicking vertices, finish with dblclick/Enter" tool — lines and every polygon type. */
+export function isPathTool(tool: ToolId): boolean {
+  return tool === 'line' || tool === 'site' || tool === 'lease' || tool === 'building' || tool === 'parcel';
+}
 
 export interface TileLayerDef {
   url: string;

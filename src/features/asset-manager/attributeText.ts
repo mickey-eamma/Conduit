@@ -8,6 +8,10 @@ const PLACEHOLDERS: Record<FeatureType, string> = {
   source: 'e.g. CO North',
   join: 'e.g. SP-204',
   delivery: 'e.g. 118 Oak St',
+  site: 'e.g. North Field',
+  lease: 'e.g. Lease 12-A',
+  building: 'e.g. Warehouse 3',
+  parcel: 'e.g. Parcel 1',
 };
 
 export function placeholderFor(feature: Feature): string {

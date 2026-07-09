@@ -7,6 +7,7 @@ interface MainTabsProps {
 
 const TABS: { id: MainView; label: string }[] = [
   { id: 'assets', label: 'Asset Manager' },
+  { id: 'networkdesign', label: 'Network Design' },
   { id: 'crossings', label: 'Crossings' },
   { id: 'builder', label: 'Map Builder' },
 ];

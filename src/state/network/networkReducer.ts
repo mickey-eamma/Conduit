@@ -1,7 +1,7 @@
-import { ORDER } from '../../domain/constants';
+import { MODES } from '../../domain/constants';
 import { createFeature } from '../../domain/featureFactory';
 import { pruneReferencesToLine } from '../../domain/joinCleanup';
-import type { LineFeature, PointFeature } from '../../domain/types';
+import type { LineFeature, PointFeature, PolygonFeature } from '../../domain/types';
 import { initialNetworkState, type NetworkAction, type NetworkState } from './networkTypes';
 
 export function networkReducer(state: NetworkState, action: NetworkAction): NetworkState {
@@ -31,6 +31,26 @@ export function networkReducer(state: NetworkState, action: NetworkAction): Netw
           [action.util]: {
             ...state.networks[action.util],
             features: [...state.networks[action.util].features, point],
+          },
+        },
+      };
+    }
+    case 'ADD_POLYGON': {
+      const { feature, nextUid } = createFeature(action.polyType, action.util, state.uid);
+      const polygon: PolygonFeature = { ...feature, type: action.polyType, latlngs: action.latlngs } as PolygonFeature;
+      if (action.name) polygon.props.name = action.name;
+      if (action.polyType === 'lease') polygon.props.parentSite = action.parentSite ?? '';
+      if (action.polyType === 'building') {
+        polygon.props.parentLease = action.parentLease ?? '';
+        polygon.props.parentSite = action.parentSite ?? '';
+      }
+      return {
+        uid: nextUid,
+        networks: {
+          ...state.networks,
+          [action.util]: {
+            ...state.networks[action.util],
+            features: [...state.networks[action.util].features, polygon],
           },
         },
       };
@@ -96,7 +116,7 @@ export function networkReducer(state: NetworkState, action: NetworkAction): Netw
     }
     case 'LOAD_PROJECT': {
       const networks = {} as NetworkState['networks'];
-      for (const id of ORDER) {
+      for (const id of MODES) {
         networks[id] = { visible: true, features: action.networks[id]?.features ?? [] };
       }
       return { uid: action.uid, networks };

@@ -114,7 +114,7 @@ export function useFeatureLayerSync(
             existing.main.setStyle(leafletStyle);
             existing.main.setTooltipContent(tipText(feature));
           }
-        } else {
+        } else if (feature.type === 'source' || feature.type === 'join' || feature.type === 'delivery') {
           if (!existing) {
             const icon = L.divIcon({
               className: 'pt-wrap',

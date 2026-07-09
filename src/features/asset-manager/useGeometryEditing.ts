@@ -163,7 +163,7 @@ export function useGeometryEditing(
           [0, f.latlngs.length - 1].forEach((ei) => {
             if (coincident(f.latlngs[ei], p)) lines.push({ util, id: f.id, endIndex: ei });
           });
-        } else if (coincident(f.latlng, p)) {
+        } else if ((f.type === 'source' || f.type === 'join' || f.type === 'delivery') && coincident(f.latlng, p)) {
           points.push({ util, id: f.id });
         }
       }

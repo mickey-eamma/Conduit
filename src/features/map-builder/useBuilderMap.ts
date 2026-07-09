@@ -72,7 +72,7 @@ export function useBuilderMap(
           }).addTo(group);
           main.bindTooltip(tipText(f), { className: 'feat-tip', direction: 'top', opacity: 1 });
           if (popup) main.bindPopup(popup);
-        } else {
+        } else if (f.type === 'source' || f.type === 'join' || f.type === 'delivery') {
           const cls = f.type === 'source' ? 'pt-source' : f.type === 'join' ? 'pt-join' : 'pt-delivery';
           const baseOp = (status === 'Abandoned' ? 0.5 : 1) * cfg.opacity;
           const extra = (status === 'Planned' || status === 'Construction' ? 'border-style:dashed;' : '') + `opacity:${baseOp};`;
@@ -102,7 +102,7 @@ export function useBuilderMap(
       for (const id of ORDER) {
         for (const f of network.networks[id].features) {
           if (f.type === 'line') for (const ll of f.latlngs) all.push(ll);
-          else all.push(f.latlng);
+          else if (f.type === 'source' || f.type === 'join' || f.type === 'delivery') all.push(f.latlng);
         }
       }
       if (all.length) map.fitBounds(L.latLngBounds(all).pad(0.25));

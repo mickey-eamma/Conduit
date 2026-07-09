@@ -8,6 +8,7 @@ import { useUsersAdmin } from './features/auth/useUsersAdmin';
 import { UsersModal } from './features/auth/UsersModal';
 import { CrossingsPage } from './features/crossings/CrossingsPage';
 import { MapBuilderPage } from './features/map-builder/MapBuilderPage';
+import { NetworkDesignPage } from './features/network-design/NetworkDesignPage';
 import { useNetwork } from './state/network/NetworkContext';
 import { useUi } from './state/ui/UiContext';
 
@@ -34,6 +35,9 @@ function App() {
       </div>
       <div style={{ display: state.mainView === 'crossings' ? 'flex' : 'none', flex: 1, minHeight: 0 }}>
         <CrossingsPage />
+      </div>
+      <div style={{ display: state.mainView === 'networkdesign' ? 'flex' : 'none', flex: 1, minHeight: 0 }}>
+        <NetworkDesignPage />
       </div>
       {usersAdmin.isOpen && <UsersModal admin={usersAdmin} />}
       {/* A soft, non-secure gate — the rest of the app stays mounted underneath, matching the original's full-screen overlay. */}

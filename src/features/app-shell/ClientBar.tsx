@@ -1,3 +1,5 @@
+import { DropdownMenu } from '../../shared/ui/DropdownMenu';
+
 interface ClientBarProps {
   clientNames: string[];
   currentClient: string | null;
@@ -32,18 +34,20 @@ export function ClientBar({
           </option>
         ))}
       </select>
-      <button type="button" className="btn cb-btn" title="Save current networks to this client" onClick={onSave}>
-        Save
-      </button>
-      <button type="button" className="btn cb-btn" title="Start a new blank client" onClick={onNew}>
-        New
-      </button>
-      <button type="button" className="btn cb-btn" title="Rename this client" onClick={onRename}>
-        Rename
-      </button>
-      <button type="button" className="btn cb-btn danger" title="Delete this client" onClick={onDelete}>
-        Delete
-      </button>
+      <DropdownMenu trigger="Manage">
+        <button type="button" className="menu-item" onClick={onSave}>
+          Save client
+        </button>
+        <button type="button" className="menu-item" onClick={onNew}>
+          New client
+        </button>
+        <button type="button" className="menu-item" onClick={onRename}>
+          Rename client
+        </button>
+        <button type="button" className="menu-item danger" onClick={onDelete}>
+          Delete client
+        </button>
+      </DropdownMenu>
     </div>
   );
 }

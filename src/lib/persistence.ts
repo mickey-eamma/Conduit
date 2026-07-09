@@ -1,6 +1,6 @@
-import { ORDER } from '../domain/constants';
+import { isPolyType, MODES } from '../domain/constants';
 import { Store } from './store';
-import type { Feature, FeatureProps, FeatureType, LineFeature, PointFeature, UtilId } from '../domain/types';
+import type { Feature, FeatureProps, FeatureType, LineFeature, PointFeature, PolygonFeature, UtilId } from '../domain/types';
 import type { NetworkState } from '../state/network/networkTypes';
 
 export const CLIENTS_KEY = 'conduit:clients';
@@ -21,16 +21,20 @@ export interface SerializedProject {
   savedAt?: number;
 }
 
+function isPathFeature(f: Feature): f is LineFeature | PolygonFeature {
+  return f.type === 'line' || isPolyType(f.type);
+}
+
 export function serializeProject(network: NetworkState): SerializedProject {
   const networks = {} as SerializedProject['networks'];
-  for (const id of ORDER) {
+  for (const id of MODES) {
     networks[id] = {
       features: network.networks[id].features.map((f): SerializedFeature => ({
         type: f.type,
         code: f.code,
         props: f.props,
-        latlngs: f.type === 'line' ? f.latlngs.map((ll): [number, number] => [ll.lat, ll.lng]) : undefined,
-        latlng: f.type !== 'line' ? ([f.latlng.lat, f.latlng.lng] as [number, number]) : undefined,
+        latlngs: isPathFeature(f) ? f.latlngs.map((ll): [number, number] => [ll.lat, ll.lng]) : undefined,
+        latlng: !isPathFeature(f) ? ([f.latlng.lat, f.latlng.lng] as [number, number]) : undefined,
       })),
     };
   }
@@ -39,11 +43,11 @@ export function serializeProject(network: NetworkState): SerializedProject {
 
 export function deserializeProject(proj: SerializedProject): { uid: number; networks: Record<UtilId, { features: Feature[] }> } {
   const networks = {} as Record<UtilId, { features: Feature[] }>;
-  for (const id of ORDER) {
+  for (const id of MODES) {
     const features: Feature[] = (proj.networks[id]?.features ?? []).map((f) => {
-      if (f.type === 'line') {
+      if (f.type === 'line' || isPolyType(f.type)) {
         const latlngs = (f.latlngs ?? []).map(([lat, lng]) => ({ lat, lng }));
-        return { id: f.code, type: 'line', util: id, code: f.code, props: f.props, latlngs } as LineFeature;
+        return { id: f.code, type: f.type, util: id, code: f.code, props: f.props, latlngs } as LineFeature | PolygonFeature;
       }
       const [lat, lng] = f.latlng ?? [0, 0];
       return { id: f.code, type: f.type, util: id, code: f.code, props: f.props, latlng: { lat, lng } } as PointFeature;

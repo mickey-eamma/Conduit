@@ -40,6 +40,8 @@ export function useHalo(
     const accent = UTILS[feature.util].color;
     if (feature.type === 'line') {
       haloRef.current = L.polyline(feature.latlngs, { color: accent, weight: 9, opacity: 0.25, interactive: false }).addTo(map);
+    } else if ('latlngs' in feature) {
+      haloRef.current = L.polygon(feature.latlngs, { color: accent, weight: 6, opacity: 0.55, fill: false, interactive: false }).addTo(map);
     } else {
       haloRef.current = L.circleMarker(feature.latlng, {
         radius: 13,

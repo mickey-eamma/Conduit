@@ -54,7 +54,7 @@ export function projectToGeoJSON(network: NetworkState): FeatureCollection {
           properties: lp,
           geometry: { type: 'LineString', coordinates: f.latlngs.map((ll) => [ll.lng, ll.lat]) },
         });
-      } else {
+      } else if (f.type === 'source' || f.type === 'join' || f.type === 'delivery') {
         features.push({
           type: 'Feature',
           properties: props,
