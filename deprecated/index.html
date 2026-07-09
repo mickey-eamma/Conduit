@@ -46,6 +46,14 @@
   .client-sel{font-family:var(--ui);font-size:13px;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:150px;cursor:pointer}
   .client-sel:focus{outline:none;border-color:var(--accent)}
   .cb-btn{padding:6px 10px;font-size:12px}
+  .menu-wrap{position:relative;display:flex;align-items:center}
+  .menu-btn{display:inline-flex;align-items:center;gap:6px}
+  .menu-btn::after{content:'\25BE';font-size:9px;color:var(--ink-faint);line-height:1}
+  .menu{position:absolute;top:calc(100% + 6px);right:0;z-index:2100;min-width:172px;background:var(--panel);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);padding:5px;display:flex;flex-direction:column;gap:2px}
+  .menu-item{font-family:var(--ui);font-size:13px;font-weight:600;color:var(--ink);background:none;border:none;border-radius:8px;padding:9px 11px;text-align:left;cursor:pointer;white-space:nowrap}
+  .menu-item:hover{background:var(--panel-2)}
+  .menu-item.danger{color:#c2334d}
+  .menu-item.danger:hover{background:#fdf3f5}
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);z-index:4000;background:#1f2430;color:#fff;font-size:13px;font-weight:600;padding:10px 18px;border-radius:10px;box-shadow:0 12px 32px -10px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.22s}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -83,6 +91,24 @@
   .cx-empty{font-size:12px;color:var(--ink-faint);line-height:1.5}
   .cx-canvas{flex:1;position:relative;min-width:0}
   #cxmap{position:absolute;inset:0;background:#e8e6e0}
+
+  /* ---- Network Design ---- */
+  body.netdesign-mode .workspace{display:none}
+  .netdesign{display:none;flex:1;min-height:0}
+  body.netdesign-mode .netdesign{display:flex}
+  .nd-side{width:288px;flex:0 0 288px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:16px 15px 26px}
+  .nd-side section{margin-bottom:20px}
+  .nd-side h3{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-faint);margin:0 0 9px}
+  .nd-side .note{font-size:12px;color:var(--ink-faint);line-height:1.5;margin:0 0 10px}
+  .nd-status{font-size:12px;color:var(--ink-dim);margin-bottom:9px;line-height:1.4;min-height:15px}
+  .nd-status.err{color:#c2334d}
+  .nd-actions{display:flex;gap:7px}
+  .nd-actions .btn{flex:1;justify-content:center;font-size:12px}
+  .nd-foot{padding-top:14px;border-top:1px solid var(--line-soft)}
+  .nd-side #ndAdd{width:100%;justify-content:center;margin-top:9px}
+  .nd-canvas{flex:1;position:relative;min-width:0}
+  #ndmap{position:absolute;inset:0;background:#e8e6e0}
+  .nd-hint{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1000;font-size:12.5px;font-weight:500;color:var(--ink-dim);background:var(--panel);border:1px solid var(--line);padding:8px 15px;border-radius:22px;box-shadow:var(--shadow-sm);max-width:92%;text-align:center}
   .cx-chk{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--ink-dim);margin-top:8px;cursor:pointer}
   .cx-chk input{width:14px;height:14px;accent-color:#1f2430;cursor:pointer;flex:0 0 auto}
   .cx-reload{width:100%;justify-content:center;margin-top:9px;font-size:12px}
@@ -106,6 +132,9 @@
   .cx-br{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;padding:4px 0}
   .cx-br .bn{color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cx-br .bv{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .cx-note{font-size:11px;color:var(--ink-faint);padding:4px 0 2px}
+  .cx-addparcels{width:100%;margin-top:8px;justify-content:center;background:color-mix(in srgb,#4f6d7a 12%,#fff);border-color:color-mix(in srgb,#4f6d7a 40%,transparent);color:#3c5866;font-weight:600}
+  .cx-addparcels:hover{background:color-mix(in srgb,#4f6d7a 20%,#fff)}
   @media(max-width:900px){.cx-side{flex-basis:230px;width:230px}.cx-panel{flex-basis:240px}}
 
   /* ---- Map Builder ---- */
@@ -309,6 +338,21 @@
   .util-tab.active{color:var(--u);border-color:color-mix(in srgb,var(--u) 45%,transparent);background:color-mix(in srgb,var(--u) 9%,#fff);box-shadow:var(--shadow-sm)}
   .util-tab.active .ct{color:var(--u)}
   .util-tab.active::before{content:"";position:absolute;left:-11px;top:50%;transform:translateY(-50%);width:3px;height:22px;border-radius:3px;background:var(--u)}
+  /* Land group flyout: Sites / Parcels */
+  /* hovered tabs get transform:translateY(-1px), which makes each a stacking context;
+     the map has z-index:1, so lift the hovered Land tab's whole context above it */
+  .land-group:hover{z-index:2600}
+  .land-group .land-flyout{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);display:none;flex-direction:column;gap:3px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:2000;min-width:150px}
+  .land-group:hover .land-flyout{display:flex}
+  .land-flyout::before{content:"";position:absolute;left:-12px;top:0;width:12px;height:100%}
+  .land-flyout::after{content:"";position:absolute;left:-6px;top:50%;transform:translateY(-50%) rotate(45deg);width:10px;height:10px;background:var(--panel);border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .land-sub{--u:#3f7f4f;display:flex;align-items:center;gap:9px;padding:8px 11px;border:none;background:none;border-radius:9px;cursor:pointer;color:var(--ink-dim);font-size:13px;font-weight:600;text-align:left;width:100%}
+  .land-sub:hover{background:color-mix(in srgb,var(--u) 10%,#fff);color:var(--u)}
+  .land-sub.on{background:color-mix(in srgb,var(--u) 14%,#fff);color:var(--u)}
+  .land-sub .lf-glyph{width:22px;height:22px;display:inline-flex;flex:0 0 auto}
+  .land-sub .lf-glyph svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .land-sub .lf-nm{flex:1}
+  .land-sub .sub-ct{font-size:11px;opacity:.7;font-variant-numeric:tabular-nums}
 
   /* ---- Map area ---- */
   .map-area{flex:1;position:relative;display:flex;flex-direction:column;min-width:0}
@@ -369,6 +413,14 @@
   .sym-source{width:13px;height:13px;background:var(--accent);transform:rotate(45deg);border:1.5px solid #fff;box-shadow:0 0 0 1px var(--accent)}
   .sym-join{width:14px;height:14px;border-radius:50%;border:3px solid var(--accent);background:#fff}
   .sym-delivery{width:12px;height:12px;border-radius:3px;background:var(--accent);border:1.5px solid #fff;box-shadow:0 0 0 1px var(--accent)}
+  .sym-site{width:15px;height:12px;border:2px dashed #2f7d4f;background:rgba(47,125,79,.08);border-radius:2px}
+  .sym-lease{width:15px;height:12px;border:2px solid #2f7d4f;background:rgba(74,160,111,.28);border-radius:2px}
+  .sym-building{width:13px;height:11px;border:1.5px solid #8a5a2b;background:rgba(192,131,65,.7);border-radius:1px}
+  .sym-parcel{width:15px;height:12px;border:2px solid #4f6d7a;background:rgba(79,109,122,.22);border-radius:2px}
+  .land-ctx{position:absolute;top:62px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;gap:9px;padding:7px 13px;background:var(--panel);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);font-size:13px}
+  .land-ctx[hidden]{display:none}
+  .land-ctx .lc-label{font-weight:700;color:#2f7d4f}
+  .land-ctx select{padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font-size:13px;max-width:220px}
 
   .layer-row{display:flex;align-items:center;gap:11px;padding:8px 0;cursor:pointer}
   .layer-row .check{width:17px;height:17px;border-radius:5px;border:1.5px solid #cfcabe;flex:0 0 17px;display:grid;place-items:center;transition:.12s;background:#fff}
@@ -427,6 +479,47 @@
   .btn.edit-geo{width:100%;justify-content:center;margin-top:4px;font-size:12.5px}
   .btn.edit-geo.active{color:#fff;background:#1f2430;border-color:#1f2430}
   .btn.edit-geo.active:hover{filter:brightness(1.1)}
+
+  /* ---- Event History modal ---- */
+  .eh-modal{position:fixed;inset:0;z-index:3200;display:flex;align-items:center;justify-content:center;background:rgba(28,32,38,.5);backdrop-filter:blur(2px);padding:24px}
+  .eh-dialog{background:#fff;width:min(720px,96vw);max-height:88vh;border-radius:14px;box-shadow:0 30px 80px -22px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+  .eh-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .eh-head .t{font-weight:700;font-size:15.5px;display:flex;align-items:center;gap:9px}
+  .eh-head .code{font-size:11px;font-weight:600;color:var(--ink-faint);background:var(--panel-2);border:1px solid var(--line-soft);padding:3px 8px;border-radius:6px;font-variant-numeric:tabular-nums}
+  .eh-head .x{flex:0 0 auto;width:30px;height:30px;border:1px solid var(--line);background:var(--panel);border-radius:8px;color:var(--ink-dim);font-size:19px;line-height:1;cursor:pointer}
+  .eh-head .x:hover{color:var(--ink);background:var(--panel-2)}
+  .eh-body{padding:18px;overflow:auto;background:var(--panel-2)}
+  .eh-asset{display:grid;grid-template-columns:1fr 1fr 1fr;border:2px solid #24408f;border-radius:10px;overflow:hidden;background:#fff;margin-bottom:16px}
+  .eh-sub{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin:2px 0 10px}
+  .eh-cell,.ev-cell{border-right:1px solid #24408f;border-bottom:1px solid #24408f;padding:8px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .eh-asset .eh-cell:nth-child(3){border-right:none}
+  .eh-asset .eh-cell.span2{grid-column:span 2}
+  .eh-asset .eh-cell:nth-child(4),.eh-asset .eh-cell:nth-child(5){border-bottom:none}
+  .eh-cell label,.ev-cell label,.ev-desc label{font-size:10.5px;font-weight:700;color:#24408f;text-transform:uppercase;letter-spacing:.4px}
+  .eh-cell input,.ev-cell input,.ev-desc input{border:none;outline:none;font-family:var(--ui);font-size:13.5px;color:var(--ink);background:transparent;width:100%;padding:1px 0}
+  .eh-erow{display:flex;align-items:flex-start;gap:11px;margin-bottom:12px}
+  .eh-erow .ev-ctrl{flex:0 0 auto;width:30px;height:30px;margin-top:8px;border-radius:50%;border:2px solid #24408f;background:#fff;color:#24408f;font-size:20px;font-weight:700;line-height:1;cursor:pointer;display:grid;place-items:center}
+  .eh-erow .ev-ctrl:hover{background:#eef2fb}
+  .eh-event{flex:1;min-width:0;border:2px solid #24408f;border-radius:10px;overflow:hidden;background:#fff}
+  .eh-event .ev-top{display:grid;grid-template-columns:1fr 1fr 1fr}
+  .eh-event .ev-cell:nth-child(3){border-right:none}
+  .eh-event .ev-desc{padding:8px 12px;display:flex;flex-direction:column;gap:3px}
+  .eh-empty{font-size:12.5px;color:var(--ink-faint);text-align:center;padding:6px 0 12px}
+  .eh-addwrap{text-align:center;margin-top:2px}
+  .eh-add{display:inline-flex;align-items:center;gap:8px;font-family:var(--ui);font-size:14px;font-weight:700;color:#24408f;background:#e8eefc;border:1.5px solid #b9ccf5;border-radius:24px;padding:11px 26px;cursor:pointer}
+  .eh-add:hover{background:#dbe6fb}
+  .eh-stages #ehStageList{margin-bottom:14px}
+  .stage-bar{display:flex;align-items:center;gap:11px;background:#24408f;color:#fff;border-radius:9px;padding:15px 17px;margin-bottom:12px;cursor:pointer;font-weight:800;font-size:17px;letter-spacing:.6px;text-transform:uppercase;transition:background .12s}
+  .stage-bar:hover{background:#2d4ea8}
+  .stage-bar .sb-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stage-bar .sb-del{flex:0 0 auto;width:24px;height:24px;border:none;background:rgba(255,255,255,.16);color:#fff;border-radius:6px;font-size:16px;line-height:1;cursor:pointer;opacity:0;transition:opacity .12s}
+  .stage-bar:hover .sb-del{opacity:1}
+  .stage-bar .sb-del:hover{background:rgba(255,255,255,.32)}
+  .stage-bar .sb-go{flex:0 0 auto;font-size:15px;opacity:.92}
+  .eh-back{background:none;border:none;color:var(--ink-dim);font-size:19px;line-height:1;cursor:pointer;padding:0 3px 0 0;font-weight:700}
+  .eh-back:hover{color:var(--ink)}
+  .eh-stagename{text-transform:uppercase;letter-spacing:.5px}
+  .btn.eh-btn{width:100%;justify-content:center;margin-top:4px;font-size:12.5px}
 
   .fiber-modal{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(28,32,38,.46);backdrop-filter:blur(2px)}
   .fiber-dialog{background:#fff;width:min(640px,95vw);max-height:88vh;border-radius:16px;box-shadow:0 30px 80px -22px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
@@ -565,6 +658,7 @@
     <div class="brand"><span class="mark"></span><span class="nm">Conduit</span><span class="sub">Utility network mapping</span></div>
     <div class="main-tabs">
       <button class="mt active" data-mview="assets">Asset Manager</button>
+      <button class="mt" data-mview="networkdesign">Network Design</button>
       <button class="mt" data-mview="crossings">Crossings</button>
       <button class="mt" data-mview="builder">Map Builder</button>
     </div>
@@ -572,15 +666,22 @@
       <div class="client-bar">
         <span class="cb-icon">Client</span>
         <select class="client-sel" id="clientSelect"><option value="">— None —</option></select>
-        <button class="btn cb-btn" id="clientSave" title="Save current networks to this client">Save</button>
-        <button class="btn cb-btn" id="clientNew" title="Start a new blank client">New</button>
-        <button class="btn cb-btn" id="clientRename" title="Rename this client">Rename</button>
-        <button class="btn cb-btn danger" id="clientDelete" title="Delete this client">Delete</button>
+        <div class="menu-wrap">
+          <button class="btn cb-btn menu-btn" id="clientMenuBtn" title="Client actions">Manage</button>
+          <div class="menu" id="clientMenu" hidden>
+            <button class="menu-item" id="clientSave">Save client</button>
+            <button class="menu-item" id="clientNew">New client</button>
+            <button class="menu-item" id="clientRename">Rename client</button>
+            <button class="menu-item danger" id="clientDelete">Delete client</button>
+          </div>
+        </div>
       </div>
-      <div class="user-bar" id="userBar" hidden>
-        <span class="ub-name" id="ubName"></span>
-        <button class="btn cb-btn" id="usersBtn" hidden>Users</button>
-        <button class="btn cb-btn" id="signOut">Sign out</button>
+      <div class="user-bar menu-wrap" id="userBar" hidden>
+        <button class="btn cb-btn menu-btn" id="userMenuBtn"><span class="ub-name" id="ubName"></span></button>
+        <div class="menu" id="userMenu" hidden>
+          <button class="menu-item" id="usersBtn" hidden>Users</button>
+          <button class="menu-item" id="signOut">Sign out</button>
+        </div>
       </div>
     </div>
   </header>
@@ -591,6 +692,10 @@
 
     <main class="map-area" id="mapArea" data-cursor="pan">
       <div class="toolbar" id="toolbar"></div>
+      <div class="land-ctx" id="landCtx" hidden>
+        <span class="lc-label" id="landCtxLabel">Lease in Site:</span>
+        <select id="landCtxSelect"></select>
+      </div>
       <div class="view-tabs" id="viewTabs">
         <button class="vt active" data-view="map">Map</button>
         <button class="vt" data-view="dashboard">Dashboard</button>
@@ -685,6 +790,37 @@
     </main>
   </div>
 
+  <div class="netdesign" id="netdesign">
+    <aside class="nd-side">
+      <section>
+        <h3>Route along streets</h3>
+        <p class="note">Click the map to drop points &mdash; start, any waypoints, then the end. Conduit routes along the OpenStreetMap street network between them.</p>
+        <div class="nd-status" id="ndStatus"></div>
+        <div class="nd-actions"><button class="btn" id="ndUndo">Undo point</button><button class="btn danger" id="ndClear">Clear</button></div>
+      </section>
+      <section>
+        <h3>Fine-tune</h3>
+        <p class="note">Drag a vertex to move it &middot; click a <b>+</b> to add one &middot; right-click a vertex to delete. Adjust the routed line before adding it.</p>
+      </section>
+      <section class="nd-foot">
+        <h3>Add to network</h3>
+        <select id="ndTarget" class="bm-select"></select>
+        <button class="btn primary" id="ndAdd" disabled>Add line to network</button>
+      </section>
+      <section>
+        <h3>Basemap</h3>
+        <select id="ndBasemap" class="bm-select">
+          <option value="gray" selected>Light gray</option>
+          <option value="streets">Streets</option>
+          <option value="imagery">Imagery</option>
+        </select>
+      </section>
+    </aside>
+    <main class="nd-canvas"><div id="ndmap"></div>
+      <div class="nd-hint" id="ndHint">Click the map to set the start point.</div>
+    </main>
+  </div>
+
   <div class="crossings" id="crossings">
     <aside class="cx-side">
       <section>
@@ -754,16 +890,30 @@ const GLYPH = {
   telecom:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M6.5 6.5a8 8 0 0 0 0 11M17.5 6.5a8 8 0 0 1 0 11M4 4a12 12 0 0 0 0 16M20 4a12 12 0 0 1 0 16"/></svg>',
   water:'<svg viewBox="0 0 24 24"><path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11Z"/></svg>',
   electric:'<svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>',
-  oilgas:'<svg viewBox="0 0 24 24"><path d="M5 21V8l5-3 5 3v13"/><path d="M3 21h18M9 12h2M9 16h2"/><path d="M15 11h3a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2"/></svg>'
+  oilgas:'<svg viewBox="0 0 24 24"><path d="M5 21V8l5-3 5 3v13"/><path d="M3 21h18M9 12h2M9 16h2"/><path d="M15 11h3a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2"/></svg>',
+  land:'<svg viewBox="0 0 24 24"><path d="M4 5v14l5-2 6 2 5-2V3l-5 2-6-2-5 2Z"/><path d="M9 3v16M15 5v16"/></svg>',
+  parcel:'<svg viewBox="0 0 24 24"><path d="M4 7 14 4l6 4-2 12-11-1Z"/></svg>'
 };
 const UTILS = {
   telecom:{ label:'Telecom', color:'#7c4ddb', abbr:'TEL', terms:{ line:'Fiber cable', source:'Central office / headend', join:'Splice point', delivery:'Service drop' }},
   water:{ label:'Water', color:'#0891b2', abbr:'WTR', terms:{ line:'Water main', source:'Treatment plant / pump', join:'Valve / fitting', delivery:'Service meter' }},
   electric:{ label:'Electric', color:'#e08700', abbr:'ELC', terms:{ line:'Distribution line', source:'Substation / generation', join:'Transformer / junction', delivery:'Service meter' }},
-  oilgas:{ label:'Oil & Gas', color:'#e11d48', abbr:'OIL', terms:{ line:'Pipeline', source:'Wellhead / refinery', join:'Joint / fitting', delivery:'City gate / delivery' }}
+  oilgas:{ label:'Oil & Gas', color:'#e11d48', abbr:'OIL', terms:{ line:'Pipeline', source:'Wellhead / refinery', join:'Joint / fitting', delivery:'City gate / delivery' }},
+  land:{ label:'Land', color:'#3f7f4f', abbr:'LND', terms:{ site:'Site', lease:'Lease', building:'Building', line:'Boundary', source:'Marker', join:'Node', delivery:'Point' }},
+  parcel:{ label:'Parcels', color:'#4f6d7a', abbr:'PCL', terms:{ parcel:'Parcel', line:'Boundary' }}
 };
-const ORDER=['telecom','water','electric','oilgas'];
-const ROLEABBR={line:'LN',source:'SRC',join:'JN',delivery:'DLV'};
+const ORDER=['telecom','water','electric','oilgas'];               // utility networks (line/point logic)
+const MODES=['telecom','water','electric','oilgas','land','parcel']; // all data modes incl. Land + Parcels
+const LAND_GROUP=['land','parcel'];                                // sub-modes under the "Land" rail tab
+const ROLEABBR={line:'LN',source:'SRC',join:'JN',delivery:'DLV',site:'STE',lease:'LSE',building:'BLD',parcel:'LOT'};
+const POLY_TYPES=['site','lease','building','parcel'];            // polygon feature types
+function isPathTool(t){ return t==='line'||POLY_TYPES.includes(t); }
+function toolsFor(util){
+  if(util==='land') return ['pan','site','lease','building','delete'];
+  if(util==='parcel') return ['pan','parcel','delete'];
+  return ['pan','line','source','join','delivery','delete'];
+}
+let landCtx={site:'',lease:''};   // chosen parent Site (for a new lease) / Lease (for a new building)
 const STATUSES=['Active','Construction','Planned','Abandoned'];
 const STATUS_COLOR={Active:'#16a34a',Construction:'#ea580c',Planned:'#2563eb',Abandoned:'#9aa1ad'};
 const STATUS_DASH={Active:null,Construction:'2 6',Planned:'9 7',Abandoned:'7 7'};
@@ -782,12 +932,16 @@ const TOOLS = {
   source:{icon:'<path d="M12 4 18 10 12 16 6 10Z"/>',label:'Place',role:'source'},
   join:{icon:'<circle cx="12" cy="12" r="5"/>',label:'Place',role:'join'},
   delivery:{icon:'<rect x="6" y="6" width="12" height="12" rx="2"/>',label:'Place',role:'delivery'},
+  site:{icon:'<path d="M12 3 20 9 17 20 7 20 4 9Z"/>',label:'Draw',role:'site'},
+  lease:{icon:'<rect x="5" y="7" width="14" height="10" rx="1"/>',label:'Draw',role:'lease'},
+  building:{icon:'<path d="M4 21V9l8-5 8 5v12"/><rect x="9" y="13" width="6" height="8"/>',label:'Draw',role:'building'},
+  parcel:{icon:'<path d="M4 7 14 4l6 4-2 12-11-1Z"/>',label:'Draw',role:'parcel'},
   delete:{icon:'<path d="M5 7h14M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',label:'Delete feature',role:null}
 };
 
 const state={ util:'telecom', tool:'pan', snap:true, uid:1, selected:null, data:{} };
 let map, draftLatLngs=[], draftLayer=null, draftVerts=null, halo=null, grat=null, tilesOk=false, relHalos=[];
-let fiberModal=null, currentSplice=null, dragWire=null, armed=null;
+let fiberModal=null, currentSplice=null, dragWire=null, armed=null, ehModal=null, ehFeat=null, ehStageIdx=-1;
 let fiberTableModal=null, traceModal=null, traceHalos=[], flowHalos=[], flowModal=null;
 
 function initMap(){
@@ -806,12 +960,12 @@ function initMap(){
   tiles.on('tileload',()=>{ if(!tilesOk){ tilesOk=true; map.off('moveend zoomend',drawGraticule); grat.clearLayers(); hideBasemapNote(); } });
   // If tiles are blocked (this preview sandbox), keep the grid and explain.
   tiles.on('tileerror',()=>{ if(!tilesOk) showBasemapNote(); });
-  for(const id of ORDER) state.data[id]={visible:true,group:L.layerGroup().addTo(map),features:[]};
+  for(const id of MODES) state.data[id]={visible:true,group:L.layerGroup().addTo(map),features:[]};
   map.on('click',onMapClick);
-  map.on('dblclick',()=>{ if(state.tool==='line') finishLine(); });
+  map.on('dblclick',()=>{ if(isPathTool(state.tool)) finishLine(); });
   map.on('mousemove',e=>{
     document.getElementById('stCoord').textContent=e.latlng.lat.toFixed(5)+', '+e.latlng.lng.toFixed(5);
-    if(state.tool==='line'&&draftLatLngs.length) previewLine(e.latlng);
+    if(isPathTool(state.tool)&&draftLatLngs.length) previewLine(e.latlng);
   });
 }
 function intervalForZoom(z){ if(z>=16)return .002; if(z>=14)return .005; if(z>=12)return .02; if(z>=10)return .05; if(z>=8)return .2; if(z>=6)return .5; return 1; }
@@ -830,7 +984,7 @@ function showBasemapNote(){const el=document.getElementById('bmNote');if(el)el.c
 function hideBasemapNote(){const el=document.getElementById('bmNote');if(el)el.classList.remove('show');}
 
 function buildRail(){
-  const rail=document.getElementById('rail');
+  const rail=document.getElementById('rail'); rail.innerHTML='';
   for(const id of ORDER){
     const u=UTILS[id], el=document.createElement('div');
     el.className='util-tab'+(id===state.util?' active':'');
@@ -838,11 +992,26 @@ function buildRail(){
     el.innerHTML=`<div class="glyph">${GLYPH[id]}</div><div class="nm">${u.label}</div><div class="ct" data-ct="${id}">0</div>`;
     el.onclick=()=>setUtil(id); rail.appendChild(el);
   }
+  // "Land" group tab — hover reveals Sites (hierarchy) and Parcels (simple polygons)
+  const lu=UTILS.land, g=document.createElement('div');
+  g.className='util-tab land-group'+(LAND_GROUP.includes(state.util)?' active':'');
+  g.style.setProperty('--u',lu.color); g.dataset.id='land';
+  g.innerHTML=`<div class="glyph">${GLYPH.land}</div><div class="nm">${lu.label}</div><div class="ct" data-ct-group="land">0</div>
+    <div class="land-flyout">
+      <button class="land-sub${state.util==='land'?' on':''}" data-util="land"><span class="lf-glyph">${GLYPH.land}</span><span class="lf-nm">Sites</span><span class="sub-ct" data-ct="land">0</span></button>
+      <button class="land-sub${state.util==='parcel'?' on':''}" data-util="parcel" style="--u:${UTILS.parcel.color}"><span class="lf-glyph">${GLYPH.parcel}</span><span class="lf-nm">Parcels</span><span class="sub-ct" data-ct="parcel">0</span></button>
+    </div>`;
+  g.onclick=()=>setUtil('land');   // clicking the tab body defaults to Sites
+  g.querySelectorAll('.land-sub').forEach(b=>b.onclick=e=>{ e.stopPropagation(); setUtil(b.dataset.util); });
+  rail.appendChild(g);
 }
 function buildToolbar(){
-  const tb=document.getElementById('toolbar');
-  ['pan','line','source','join','delivery','delete'].forEach(t=>{
-    if(t==='source'||t==='delete'){const s=document.createElement('div');s.className='tool-sep';tb.appendChild(s);}
+  const tb=document.getElementById('toolbar'); tb.innerHTML='';
+  toolsFor(state.util).forEach(t=>{
+    const sep = state.util==='land' ? (t==='site'||t==='delete')
+              : state.util==='parcel' ? (t==='parcel'||t==='delete')
+              : (t==='source'||t==='delete');
+    if(sep){const s=document.createElement('div');s.className='tool-sep';tb.appendChild(s);}
     const b=document.createElement('button');
     b.className='tool'+(t===state.tool?' active':''); b.dataset.tool=t;
     b.innerHTML=`<svg viewBox="0 0 24 24">${TOOLS[t].icon}</svg><span class="tip" data-tip="${t}"></span>`;
@@ -851,23 +1020,27 @@ function buildToolbar(){
 }
 
 function setUtil(id){
-  if(state.tool==='line') cancelLine();
+  if(isPathTool(state.tool)) cancelLine();
   deselect();
   state.util=id;
   document.documentElement.style.setProperty('--accent',UTILS[id].color);
-  document.querySelectorAll('.util-tab').forEach(t=>t.classList.toggle('active',t.dataset.id===id));
+  document.querySelectorAll('.util-tab').forEach(t=>t.classList.toggle('active', t.dataset.id===id || (t.dataset.id==='land'&&LAND_GROUP.includes(id))));
+  document.querySelectorAll('.land-sub').forEach(b=>b.classList.toggle('on',b.dataset.util===id));
   document.getElementById('netName').textContent=UTILS[id].label;
   document.getElementById('stMode').textContent=UTILS[id].label;
+  document.body.classList.toggle('land-mode',LAND_GROUP.includes(id));
+  buildToolbar();
+  const tl=toolsFor(id); setTool(tl.includes(state.tool)?state.tool:'pan');
   renderLegend(); renderTipNote(); refreshTips();
 }
 function setTool(t){
-  if(state.tool==='line'&&t!=='line') cancelLine();
+  if(isPathTool(state.tool)&&t!==state.tool) cancelLine();
   if(t!=='pan') stopEditGeometry();
   state.tool=t;
   document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));
   document.getElementById('stTool').textContent = t==='pan'?'Select':(TOOLS[t].role?adaptiveLabel(t):'Delete');
-  document.getElementById('mapArea').dataset.cursor = (t==='line'||['source','join','delivery'].includes(t))?'draw':(t==='delete'?'delete':'pan');
-  setHint();
+  document.getElementById('mapArea').dataset.cursor = (isPathTool(t)||['source','join','delivery'].includes(t))?'draw':(t==='delete'?'delete':'pan');
+  setHint(); updateLandCtx();
 }
 function adaptiveLabel(t){const r=TOOLS[t].role;return r?TOOLS[t].label+' '+UTILS[state.util].terms[r].split(' / ')[0].toLowerCase():TOOLS[t].label;}
 function refreshTips(){
@@ -877,20 +1050,24 @@ function refreshTips(){
   });
 }
 function setHint(){
-  const term=r=>UTILS[state.util].terms[r];
+  const term=r=>UTILS[state.util].terms[r]||'feature';
   const msg={
     pan:'Click any feature to select it and edit its details. Drag to pan.',
     line:`Click to lay vertices of a ${term('line').toLowerCase()}. Double-click or Enter to finish · Esc to cancel.`,
     source:`Click the map to place a ${term('source').toLowerCase()} — where the commodity originates.`,
     join:`Click to drop a ${term('join').toLowerCase()}, then pick the two lines it connects.`,
     delivery:`Click to place a ${term('delivery').toLowerCase()} — where service is delivered.`,
+    site:'Click to lay the corners of a Site boundary. Double-click or Enter to close · Esc to cancel.',
+    lease:'Pick a parent Site above, then click to draw the Lease boundary inside it. Double-click or Enter to close.',
+    building:'Pick a parent Lease above, then click to draw the Building footprint inside it. Double-click or Enter to close.',
+    parcel:'Click to lay the corners of a parcel. Double-click or Enter to close · Esc to cancel.',
     delete:'Click any feature on the map to remove it.'
   };
   document.getElementById('hintText').textContent=msg[state.tool];
 }
 
 /* snapping */
-function snapPoints(){const pts=[];state.data[state.util].features.forEach(f=>{if(f.type==='line')f.latlngs.forEach(ll=>pts.push(ll));else pts.push(f.latlng);});return pts;}
+function snapPoints(){const pts=[];state.data[state.util].features.forEach(f=>{if(f.latlngs)f.latlngs.forEach(ll=>pts.push(ll));else if(f.latlng)pts.push(f.latlng);});return pts;}
 function snap(latlng){
   if(!state.snap) return latlng;
   const p=map.latLngToContainerPoint(latlng);let best=null,bd=14;
@@ -901,13 +1078,21 @@ function snap(latlng){
 function onMapClick(e){
   const t=state.tool;
   if(t==='line') addVertex(snap(e.latlng));
+  else if(POLY_TYPES.includes(t)){ if(!landParentReady(t)) return; addVertex(e.latlng); }
   else if(t==='source'||t==='join'||t==='delivery') addPoint(t,snap(e.latlng));
   else if(t==='pan') deselect();
+}
+// Enforce the hierarchy: a lease needs a parent Site, a building needs a parent Lease.
+function landParentReady(t){
+  if(t==='lease'){ if(!landCtx.site||!landByCode(landCtx.site)){ toast('Select a parent Site for this lease first.'); return false; } }
+  if(t==='building'){ if(!landCtx.lease||!landByCode(landCtx.lease)){ toast('Select a parent Lease for this building first.'); return false; } }
+  return true;
 }
 function onFeatureClick(feat,ev){
   L.DomEvent.stop(ev); const t=state.tool;
   if(t==='delete'){removeFeature(feat);return;}
   if(t==='line'){addVertex(snap(ev.latlng));return;}
+  if(POLY_TYPES.includes(t)){ if(landParentReady(t)) addVertex(ev.latlng); return; }
   if(t==='source'||t==='join'||t==='delivery'){addPoint(t,snap(ev.latlng));return;}
   if(editLine===feat) return;                 // keep editing when clicking the line you're editing
   selectFeature(feat);
@@ -924,7 +1109,11 @@ function previewLine(mouse){
   draftVerts=L.layerGroup(draftLatLngs.map(ll=>L.marker(ll,{icon:L.divIcon({className:'vertex-dot',html:'<div></div>',iconSize:[14,14],iconAnchor:[7,7]}),interactive:false}))).addTo(map);
 }
 function isVertex(ll){return draftLatLngs.some(v=>v.lat===ll.lat&&v.lng===ll.lng);}
-function finishLine(){if(draftLatLngs.length>=2) commitLine(draftLatLngs.slice());cancelLine();}
+function finishLine(){
+  if(POLY_TYPES.includes(state.tool)){ if(draftLatLngs.length>=3) commitPolygon(draftLatLngs.slice(),state.tool); }
+  else if(draftLatLngs.length>=2) commitLine(draftLatLngs.slice());
+  cancelLine();
+}
 function cancelLine(){draftLatLngs=[];if(draftLayer){map.removeLayer(draftLayer);draftLayer=null;}if(draftVerts){map.removeLayer(draftVerts);draftVerts=null;}}
 
 function newFeature(type,util){
@@ -937,6 +1126,8 @@ function newFeature(type,util){
     else if(isFlowNet(util)){ props.fromLine=''; props.toLines=[]; }
     else { props.fromLine=''; props.toLine=''; }
   }
+  if(type==='lease'){ props.parentSite=''; }
+  if(type==='building'){ props.parentLease=''; props.parentSite=''; }
   return {id:state.uid,type,util,code,props};
 }
 
@@ -950,6 +1141,67 @@ function commitLine(latlngs,name,util,defer){
   main.on('click',ev=>onFeatureClick(feat,ev));
   main.bindTooltip(tipText(feat),{className:'feat-tip',direction:'top',opacity:1});
   state.data[feat.util].features.push(feat); applyStatusStyle(feat); if(!defer) afterChange();
+}
+
+/* ---------- Land: Site / Lease / Building polygons ---------- */
+const LAND_STYLE={
+  site:{color:'#2f7d4f',weight:3,opacity:.95,fill:true,fillColor:'#2f7d4f',fillOpacity:.05,dashArray:'8 5'},
+  lease:{color:'#2f7d4f',weight:2,opacity:.9,fill:true,fillColor:'#4aa06f',fillOpacity:.16,dashArray:null},
+  building:{color:'#8a5a2b',weight:1.5,opacity:.95,fill:true,fillColor:'#c08341',fillOpacity:.55,dashArray:null},
+  parcel:{color:'#4f6d7a',weight:2,opacity:.9,fill:true,fillColor:'#4f6d7a',fillOpacity:.15,dashArray:null}
+};
+function landFeats(type){ return state.data.land.features.filter(f=>!type||f.type===type); }
+function landByCode(code){ return state.data.land.features.find(f=>f.code===code); }
+function polyArea(latlngs){                      // approximate geodesic area in m²
+  if(!latlngs||latlngs.length<3) return 0;
+  const R=6378137, rad=Math.PI/180; let a=0, n=latlngs.length;
+  for(let i=0;i<n;i++){ const p1=latlngs[i], p2=latlngs[(i+1)%n];
+    a += (p2.lng-p1.lng)*rad * (2 + Math.sin(p1.lat*rad) + Math.sin(p2.lat*rad)); }
+  return Math.abs(a * R * R / 2);
+}
+function fmtArea(m2){
+  if(!m2) return '0';
+  const ac=m2/4046.8564224;
+  if(ac>=0.1) return ac.toFixed(2)+' ac ('+Math.round(m2).toLocaleString()+' m²)';
+  return Math.round(m2*10.7639).toLocaleString()+' ft² ('+Math.round(m2).toLocaleString()+' m²)';
+}
+function polyUtil(type){ return type==='parcel'?'parcel':'land'; }
+function commitPolygon(latlngs,type,defer){
+  const util=polyUtil(type), feat=newFeature(type,util); feat.latlngs=latlngs;
+  if(type==='lease'){ feat.props.parentSite=landCtx.site||''; }
+  if(type==='building'){ const lease=landByCode(landCtx.lease); feat.props.parentLease=landCtx.lease||''; feat.props.parentSite=lease?(lease.props.parentSite||''):''; }
+  const poly=L.polygon(latlngs, LAND_STYLE[type]);
+  feat.poly=poly; feat.layer=poly; poly.addTo(state.data[util].group);
+  poly.on('click',ev=>onFeatureClick(feat,ev));
+  poly.bindTooltip(tipText(feat),{className:'feat-tip',direction:'top',opacity:1});
+  state.data[util].features.push(feat); applyStatusStyle(feat);
+  if(!defer){ afterChange(); selectFeature(feat); }
+  return feat;
+}
+function rebuildPolygon(util,code,type,props,arr){
+  const latlngs=arr.map(p=>L.latLng(p[0],p[1]));
+  const poly=L.polygon(latlngs, LAND_STYLE[type]||LAND_STYLE.site);
+  const feat={id:code,type,util,code,props,latlngs,poly};
+  feat.layer=poly; poly.addTo(state.data[util].group);
+  poly.on('click',ev=>onFeatureClick(feat,ev));
+  poly.bindTooltip(tipText(feat),{className:'feat-tip',direction:'top',opacity:1});
+  state.data[util].features.push(feat); applyStatusStyle(feat);
+}
+// Show/populate the parent-picker bar that sits below the toolbar in Land mode.
+function updateLandCtx(){
+  const bar=document.getElementById('landCtx'); if(!bar) return;
+  const sel=document.getElementById('landCtxSelect'), lab=document.getElementById('landCtxLabel'), t=state.tool;
+  if(state.util!=='land' || (t!=='lease'&&t!=='building')){ bar.hidden=true; return; }
+  bar.hidden=false;
+  const parentType = t==='lease'?'site':'lease';
+  lab.textContent = t==='lease'?'Lease in Site:':'Building in Lease:';
+  const opts=landFeats(parentType);
+  const key = t==='lease'?'site':'lease';
+  if(!opts.some(o=>o.code===landCtx[key])) landCtx[key]=opts[0]?opts[0].code:'';
+  sel.innerHTML = opts.length ? opts.map(f=>`<option value="${f.code}" ${f.code===landCtx[key]?'selected':''}>${escapeHtml(f.props.name||f.code)}</option>`).join('')
+    : `<option value="">— draw a ${parentType} first —</option>`;
+  sel.disabled=!opts.length;
+  sel.onchange=()=>{ landCtx[key]=sel.value; };
 }
 
 /* ---------- KMZ/KML import: trace lines into the current network ---------- */
@@ -1193,6 +1445,9 @@ function applyStatusStyle(feat){
     } else {
       feat.main.setStyle({dashArray:STATUS_DASH[s]??null,opacity:STATUS_OPACITY[s]??.95});
     }
+  }else if(feat.poly){
+    const base=LAND_STYLE[feat.type]||LAND_STYLE.site;
+    feat.poly.setStyle({dashArray:STATUS_DASH[s]??base.dashArray,opacity:STATUS_OPACITY[s]??base.opacity,fillOpacity:(s==='Abandoned'?base.fillOpacity*0.4:base.fillOpacity)});
   }else{
     const el=feat.marker.getElement(); if(el){const d=el.querySelector('.pt');if(d){d.style.opacity=s==='Abandoned'?.5:1;d.style.borderStyle=(s==='Planned'||s==='Construction')?'dashed':'solid';}}
   }
@@ -1344,6 +1599,7 @@ function selectFeature(feat){
   deselect(); state.selected=feat;
   const accent=UTILS[feat.util].color;
   if(feat.type==='line') halo=L.polyline(feat.latlngs,{color:accent,weight:9,opacity:.25,interactive:false}).addTo(map);
+  else if(POLY_TYPES.includes(feat.type)) halo=L.polygon(feat.latlngs,{color:accent,weight:6,opacity:.55,fill:false,interactive:false}).addTo(map);
   else halo=L.circleMarker(feat.latlng,{radius:13,color:accent,weight:2,dashArray:'3 3',fill:false,interactive:false}).addTo(map);
   highlightRelations(feat);
   renderAttr();
@@ -1411,6 +1667,10 @@ function renderAttr(){
       extra+=`<div class="field"><label>Placement</label><select id="aPlace"><option ${pl==='Aerial'?'selected':''}>Aerial</option><option ${pl==='Underground'?'selected':''}>Underground</option></select></div>`;
     }
     extra+=`<div class="field"><label>Length</label><div class="ro">${fmtLen(lineLength(feat))}</div></div>`;
+    const ehSt=feat.props.stages;
+    const ehN=Array.isArray(ehSt) ? ehSt.reduce((s,st)=>s+((st.events&&st.events.length)||0),0)
+      : ((feat.props.eventHistory&&feat.props.eventHistory.events&&feat.props.eventHistory.events.length)||0);
+    extra+=`<button class="btn eh-btn" id="aEvents">Event History${ehN?` · ${ehN}`:''}</button>`;
     extra+=`<button class="btn edit-geo${isEditingLine(feat)?' active':''}" id="aEditGeo">${isEditingLine(feat)?'Done editing geometry':'Edit geometry'}</button>`;
     if(feat.util==='telecom') extra+=`<button class="btn matrix" id="aTrace">Trace fibers</button>`;
     if(isFlowNet(feat.util)) extra+=`<button class="btn flow" id="aFlow">Trace downstream</button><button class="btn flow up" id="aFlowUp">Trace upstream</button>`;
@@ -1460,6 +1720,28 @@ function renderAttr(){
       rel+=`</div>`;
     }
   }
+  if(POLY_TYPES.includes(feat.type)){
+    extra+=`<div class="field"><label>Area</label><div class="ro">${fmtArea(polyArea(feat.latlngs))}</div></div>`;
+    if(feat.type==='lease'){
+      if(feat.props.parentSite && !landByCode(feat.props.parentSite)) feat.props.parentSite='';
+      const sites=landFeats('site');
+      rel=`<div class="rel-block"><div class="field"><label>Parent Site</label><select id="aParentSite"><option value="">— none —</option>${sites.map(s=>`<option value="${s.code}" ${s.code===feat.props.parentSite?'selected':''}>${escapeHtml(s.props.name||s.code)}</option>`).join('')}</select></div>`;
+      if(!feat.props.parentSite) rel+=`<div class="rel-warn">This lease isn’t associated with a Site.</div>`;
+      const nB=landFeats('building').filter(b=>b.props.parentLease===feat.code).length;
+      rel+=`<div class="rel-hint">${nB} building${nB!==1?'s':''} inside this lease.</div></div>`;
+    } else if(feat.type==='building'){
+      if(feat.props.parentLease && !landByCode(feat.props.parentLease)) feat.props.parentLease='';
+      const leases=landFeats('lease');
+      rel=`<div class="rel-block"><div class="field"><label>Parent Lease</label><select id="aParentLease"><option value="">— none —</option>${leases.map(l=>`<option value="${l.code}" ${l.code===feat.props.parentLease?'selected':''}>${escapeHtml(l.props.name||l.code)}</option>`).join('')}</select></div>`;
+      const site=feat.props.parentSite?landByCode(feat.props.parentSite):null;
+      rel+=`<div class="field"><label>Site</label><div class="ro">${site?escapeHtml(site.props.name||site.code):'—'}</div></div>`;
+      if(!feat.props.parentLease) rel+=`<div class="rel-warn">This building isn’t associated with a Lease.</div>`;
+      rel+=`</div>`;
+    } else if(feat.type==='site'){
+      const nL=landFeats('lease').filter(l=>l.props.parentSite===feat.code).length;
+      rel=`<div class="rel-block"><div class="rel-hint">${nL} lease${nL!==1?'s':''} inside this site.</div></div>`;
+    }
+  }
   document.getElementById('attrBody').innerHTML=`
     <div class="attr-head"><span class="chip" style="background:${u.color}"></span><span class="role">${role}</span><span class="code">${feat.code}</span></div>
     <div class="field"><label>Name</label><input id="aName" type="text" placeholder="${placeholderFor(feat)}" value="${escapeHtml(feat.props.name)}"></div>
@@ -1468,7 +1750,7 @@ function renderAttr(){
     <div class="field"><label>Network</label><div class="ro">${u.label}</div></div>
     <div class="attr-actions"><button class="btn danger" id="aDelete">Delete</button><button class="btn" id="aDone">Done</button></div>`;
   const nameEl=document.getElementById('aName');
-  nameEl.oninput=()=>{feat.props.name=nameEl.value;feat.layer===feat.marker?feat.marker.setTooltipContent(tipText(feat)):feat.main.setTooltipContent(tipText(feat));};
+  nameEl.oninput=()=>{feat.props.name=nameEl.value;const lyr=feat.marker||feat.main||feat.poly;if(lyr&&lyr.setTooltipContent)lyr.setTooltipContent(tipText(feat));};
   document.getElementById('aStatus').onchange=e=>{feat.props.status=e.target.value;applyStatusStyle(feat);};
   const fiberEl=document.getElementById('aFiber');
   if(fiberEl) fiberEl.onchange=e=>{feat.props.fiberCount=parseInt(e.target.value);};
@@ -1476,6 +1758,8 @@ function renderAttr(){
   if(placeEl) placeEl.onchange=e=>{feat.props.placement=e.target.value;applyStatusStyle(feat);recomputeRisers();};
   const traceEl=document.getElementById('aTrace');
   if(traceEl) traceEl.onclick=()=>openFiberTable(feat);
+  const eventsEl=document.getElementById('aEvents');
+  if(eventsEl) eventsEl.onclick=()=>openEventHistory(feat);
   const editGeoEl=document.getElementById('aEditGeo');
   if(editGeoEl) editGeoEl.onclick=()=>toggleEditGeometry(feat);
   const flowEl=document.getElementById('aFlow');
@@ -1513,6 +1797,11 @@ function renderAttr(){
     row.querySelector('.dn-line').onchange=e=>{ feat.props.toLines[i]=e.target.value; highlightRelations(feat); renderAttr(); };
     row.querySelector('.br-del').onclick=()=>{ feat.props.toLines.splice(i,1); highlightRelations(feat); renderAttr(); };
   });
+  // land hierarchy
+  const psEl=document.getElementById('aParentSite');
+  if(psEl) psEl.onchange=e=>{ feat.props.parentSite=e.target.value; highlightRelations(feat); renderAttr(); };
+  const plEl=document.getElementById('aParentLease');
+  if(plEl) plEl.onchange=e=>{ feat.props.parentLease=e.target.value; const lease=landByCode(e.target.value); feat.props.parentSite=lease?(lease.props.parentSite||''):''; highlightRelations(feat); renderAttr(); };
   document.getElementById('aDelete').onclick=()=>removeFeature(feat);
   document.getElementById('aDone').onclick=()=>deselect();
 }
@@ -1691,7 +1980,7 @@ function handleFibClick(node){
   if(armed&&armed.side!==info.side){ doConnect(armed,info); armed=null; updateArmed(); drawWires(); return; } // connect across
   armed=info; updateArmed();                                                                            // arm / re-arm
 }
-function placeholderFor(feat){const ex={line:'e.g. Span A-12',source:'e.g. CO North',join:'e.g. SP-204',delivery:'e.g. 118 Oak St'};return ex[feat.type];}
+function placeholderFor(feat){const ex={line:'e.g. Span A-12',source:'e.g. CO North',join:'e.g. SP-204',delivery:'e.g. 118 Oak St',site:'e.g. North Field',lease:'e.g. Lease 12-A',building:'e.g. Warehouse 3'};return ex[feat.type];}
 function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function lineLength(feat){let m=0;for(let i=1;i<feat.latlngs.length;i++)m+=map.distance(feat.latlngs[i-1],feat.latlngs[i]);return m;}
 function fmtLen(m){return m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';}
@@ -1700,14 +1989,16 @@ function fmtLen(m){return m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';}
 function counts(util){const c={line:0,source:0,join:0,delivery:0};state.data[util].features.forEach(f=>c[f.type]++);c.total=state.data[util].features.length;return c;}
 function renderLegend(){
   const u=UTILS[state.util];
-  document.getElementById('legend').innerHTML=[
-    ['sym-line','Line',u.terms.line],['sym-source','Source',u.terms.source],
-    ['sym-join','Join',u.terms.join],['sym-delivery','Delivery',u.terms.delivery]
-  ].map(([s,role,term])=>`<div class="legend-row"><span class="sym"><span class="${s}"></span></span><span><div class="role">${role}</div><div class="term">${term}</div></span></div>`).join('');
+  const rows = state.util==='land'
+    ? [['sym-site','Site',u.terms.site],['sym-lease','Lease',u.terms.lease],['sym-building','Building',u.terms.building]]
+    : state.util==='parcel'
+    ? [['sym-parcel','Parcel',u.terms.parcel]]
+    : [['sym-line','Line',u.terms.line],['sym-source','Source',u.terms.source],['sym-join','Join',u.terms.join],['sym-delivery','Delivery',u.terms.delivery]];
+  document.getElementById('legend').innerHTML=rows.map(([s,role,term])=>`<div class="legend-row"><span class="sym"><span class="${s}"></span></span><span><div class="role">${role}</div><div class="term">${term}</div></span></div>`).join('');
 }
 function renderLayers(){
   const wrap=document.getElementById('layers'); wrap.innerHTML='';
-  for(const id of ORDER){
+  for(const id of MODES){
     const u=UTILS[id],d=state.data[id],row=document.createElement('div');
     row.className='layer-row'+(d.visible?' on':''); row.style.setProperty('--u',u.color);
     row.innerHTML=`<span class="check"><svg viewBox="0 0 12 12"><path d="M2 6l3 3 5-6"/></svg></span><span class="lc"></span><span class="ln">${u.label}</span><span class="cnt tnum">${counts(id).total}</span>`;
@@ -1715,10 +2006,24 @@ function renderLayers(){
   }
 }
 function toggleLayer(id){const d=state.data[id];d.visible=!d.visible;if(d.visible)d.group.addTo(map);else map.removeLayer(d.group);renderLayers();}
-function renderTotals(){const c=counts(state.util);document.getElementById('totals').innerHTML=`<span class="pill"><b>${c.line}</b> lines</span><span class="pill"><b>${c.source}</b> sources</span><span class="pill"><b>${c.join}</b> joins</span><span class="pill"><b>${c.delivery}</b> deliveries</span>`;}
+function renderTotals(){
+  if(state.util==='land'){
+    const f=state.data.land.features, nS=f.filter(x=>x.type==='site').length, nL=f.filter(x=>x.type==='lease').length, nB=f.filter(x=>x.type==='building').length;
+    document.getElementById('totals').innerHTML=`<span class="pill"><b>${nS}</b> sites</span><span class="pill"><b>${nL}</b> leases</span><span class="pill"><b>${nB}</b> buildings</span>`;
+    return;
+  }
+  if(state.util==='parcel'){
+    const n=state.data.parcel.features.length;
+    document.getElementById('totals').innerHTML=`<span class="pill"><b>${n}</b> parcel${n!==1?'s':''}</span>`;
+    return;
+  }
+  const c=counts(state.util);document.getElementById('totals').innerHTML=`<span class="pill"><b>${c.line}</b> lines</span><span class="pill"><b>${c.source}</b> sources</span><span class="pill"><b>${c.join}</b> joins</span><span class="pill"><b>${c.delivery}</b> deliveries</span>`;}
 function renderTipNote(){document.getElementById('tipNote').textContent=`Snapping is on — vertices and nodes lock onto nearby ${UTILS[state.util].label.toLowerCase()} points so segments connect cleanly.`;}
-function updateRailCounts(){for(const id of ORDER) document.querySelector(`[data-ct="${id}"]`).textContent=counts(id).total;}
-function afterChange(){recomputeRisers();renderLayers();renderTotals();updateRailCounts();document.getElementById('stCount').textContent=ORDER.reduce((s,id)=>s+counts(id).total,0); if(mainView==='builder'&&builder.map) syncBuilder();}
+function updateRailCounts(){
+  for(const id of MODES){const el=document.querySelector(`[data-ct="${id}"]`); if(el) el.textContent=counts(id).total;}
+  const lg=document.querySelector('[data-ct-group="land"]'); if(lg) lg.textContent=counts('land').total+counts('parcel').total;
+}
+function afterChange(){recomputeRisers();renderLayers();renderTotals();updateRailCounts();document.getElementById('stCount').textContent=MODES.reduce((s,id)=>s+counts(id).total,0); if(mainView==='builder'&&builder.map) syncBuilder();}
 
 /* ---------- risers: auto-placed where aerial meets underground ---------- */
 function coincident(a,b){return Math.abs(a.lat-b.lat)<1e-7 && Math.abs(a.lng-b.lng)<1e-7;}
@@ -1870,18 +2175,18 @@ async function persistClients(obj){ await Store.set(CLIENTS_KEY,JSON.stringify(o
 
 function serializeProject(){
   const out={uid:state.uid, networks:{}};
-  ORDER.forEach(id=>{
+  MODES.forEach(id=>{
     out.networks[id]={features: state.data[id].features.map(f=>({
       type:f.type, code:f.code, props:f.props,
-      latlngs: f.type==='line'? f.latlngs.map(ll=>[ll.lat,ll.lng]) : undefined,
-      latlng:  f.type!=='line'? [f.latlng.lat,f.latlng.lng] : undefined
+      latlngs: f.latlngs? f.latlngs.map(ll=>[ll.lat,ll.lng]) : undefined,
+      latlng:  f.latlng?  [f.latlng.lat,f.latlng.lng] : undefined
     }))};
   });
   return out;
 }
 function clearAllNetworks(){
   deselect(); clearTrace(); closeTrace(); closeFiberTable(); if(fiberModal) closeMatrix();
-  ORDER.forEach(id=>{
+  MODES.forEach(id=>{
     const d=state.data[id];
     if(d.group) map.removeLayer(d.group);   // drop the old group and everything inside it
     d.group=L.layerGroup();
@@ -1914,9 +2219,10 @@ function rebuildPoint(util,code,type,props,arr){
 function loadProject(proj){
   clearAllNetworks();
   state.uid = proj.uid || 1;
-  ORDER.forEach(id=>{
+  MODES.forEach(id=>{
     ((proj.networks[id]||{}).features||[]).forEach(f=>{
       if(f.type==='line') rebuildLine(id,f.code,f.props,f.latlngs);
+      else if(POLY_TYPES.includes(f.type)) rebuildPolygon(id,f.code,f.type,f.props,f.latlngs);
       else rebuildPoint(id,f.code,f.type,f.props,f.latlng);
     });
   });
@@ -2139,7 +2445,7 @@ function renderDashboard(){
 }
 
 /* actions */
-function fitNetwork(){const all=[];ORDER.forEach(id=>state.data[id].features.forEach(f=>{if(f.type==='line')f.latlngs.forEach(ll=>all.push(ll));else all.push(f.latlng);}));if(all.length)map.fitBounds(L.latLngBounds(all).pad(0.25));}
+function fitNetwork(){const all=[];MODES.forEach(id=>state.data[id].features.forEach(f=>{if(f.latlngs)f.latlngs.forEach(ll=>all.push(ll));else if(f.latlng)all.push(f.latlng);}));if(all.length)map.fitBounds(L.latLngBounds(all).pad(0.25));}
 function clearActive(){const d=state.data[state.util];if(!d.features.length)return;if(!confirm(`Clear all ${UTILS[state.util].label} features? This cannot be undone.`))return;deselect();if(d.group)map.removeLayer(d.group);d.group=L.layerGroup();if(d.visible)d.group.addTo(map);d.features=[];d.risers=[];afterChange();}
 function exportGeoJSON(){
   const features=[];
@@ -2204,10 +2510,108 @@ const WIDGET_DEFS={
              icon:'<path d="M4 12h5l3-6 4 12 3-6h1"/>'}
 };
 
+/* ---------- Network Design: route along OSM streets, edit vertices, add to a network ---------- */
+const OSRM_URL='https://router.project-osrm.org/route/v1/driving/';
+const netdesign={ map:null, baseLayers:[], basemap:'gray', ctxGroup:null, wpGroup:null, waypoints:[],
+  routeLatLngs:null, routeLayer:null, editVerts:[], editMids:[], routing:false, routed:false };
+function ndWpIcon(kind){ const c=kind==='start'?'#16a34a':kind==='end'?'#c2334d':'#2563eb';
+  return L.divIcon({className:'pt-wrap',html:`<div style="width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid ${c};box-shadow:var(--shadow-sm)"></div>`,iconSize:[14,14],iconAnchor:[7,7]}); }
+function initNetDesign(){
+  netdesign.map=L.map('ndmap',{zoomControl:true}).setView([32.74,-97.05],13);
+  BASEMAPS.gray.layers.forEach(t=>netdesign.baseLayers.push(L.tileLayer(t[0],t[1]).addTo(netdesign.map)));
+  netdesign.ctxGroup=L.layerGroup().addTo(netdesign.map);
+  netdesign.wpGroup=L.layerGroup().addTo(netdesign.map);
+  netdesign.map.on('click',ndMapClick);
+  document.getElementById('ndUndo').onclick=ndUndo;
+  document.getElementById('ndClear').onclick=ndClear;
+  document.getElementById('ndAdd').onclick=ndAddToNetwork;
+  document.getElementById('ndBasemap').onchange=e=>{ netdesign.basemap=e.target.value; ndApplyBasemap(); };
+  document.getElementById('ndTarget').innerHTML=ORDER.map(id=>`<option value="${id}">${UTILS[id].label}</option>`).join('');
+  ndUpdateUI();
+}
+function ndApplyBasemap(){ netdesign.baseLayers.forEach(l=>netdesign.map.removeLayer(l)); netdesign.baseLayers=[]; (BASEMAPS[netdesign.basemap]||BASEMAPS.gray).layers.forEach(t=>netdesign.baseLayers.push(L.tileLayer(t[0],t[1]).addTo(netdesign.map))); }
+function ndSync(){
+  if(!netdesign.map) return;
+  netdesign.ctxGroup.clearLayers();
+  ORDER.forEach(id=>state.data[id].features.forEach(f=>{ if(f.type==='line') L.polyline(f.latlngs,{color:UTILS[id].color,weight:2,opacity:.35,interactive:false}).addTo(netdesign.ctxGroup); }));
+}
+function ndFit(){ const all=[]; ORDER.forEach(id=>state.data[id].features.forEach(f=>{ if(f.type==='line') f.latlngs.forEach(ll=>all.push(ll)); })); if(all.length) netdesign.map.fitBounds(L.latLngBounds(all).pad(0.25),{animate:false}); }
+function ndMapClick(e){ if(netdesign.routing) return; netdesign.waypoints.push(e.latlng); ndRenderWaypoints(); if(netdesign.waypoints.length>=2) ndRoute(); else ndUpdateUI(); }
+function ndRenderWaypoints(){
+  netdesign.wpGroup.clearLayers();
+  const n=netdesign.waypoints.length;
+  netdesign.waypoints.forEach((ll,i)=>{ const kind=i===0?'start':i===n-1?'end':'mid'; L.marker(ll,{icon:ndWpIcon(kind),interactive:false,zIndexOffset:1300}).addTo(netdesign.wpGroup); });
+}
+async function ndRoute(){
+  if(netdesign.waypoints.length<2) return;
+  netdesign.routing=true; ndStatus('Routing along the street network…'); ndUpdateUI();
+  const coords=netdesign.waypoints.map(ll=>ll.lng+','+ll.lat).join(';');
+  try{
+    const r=await fetch(OSRM_URL+coords+'?overview=simplified&geometries=geojson');
+    const j=await r.json();
+    if(j.code!=='Ok'||!j.routes||!j.routes.length) throw new Error(j.message||'No route found between those points.');
+    netdesign.routeLatLngs=j.routes[0].geometry.coordinates.map(c=>L.latLng(c[1],c[0]));
+    netdesign.routed=true; ndDrawRoute(); ndBuildEditHandles();
+  }catch(err){
+    netdesign.routeLatLngs=netdesign.waypoints.map(ll=>L.latLng(ll.lat,ll.lng));   // fallback: straight segments
+    netdesign.routed=false; ndDrawRoute(); ndBuildEditHandles();
+    toast('Routing unavailable — drew straight segments; drag vertices to trace the streets.');
+  }
+  netdesign.routing=false; ndUpdateUI();
+}
+function ndDrawRoute(){
+  if(netdesign.routeLayer){ netdesign.map.removeLayer(netdesign.routeLayer); netdesign.routeLayer=null; }
+  if(!netdesign.routeLatLngs) return;
+  netdesign.routeLayer=L.layerGroup([
+    L.polyline(netdesign.routeLatLngs,{color:'#ffffff',weight:7,opacity:.9,interactive:false}),
+    L.polyline(netdesign.routeLatLngs,{color:'#7c4ddb',weight:4,opacity:.95,interactive:false})
+  ]).addTo(netdesign.map);
+}
+function ndClearEdit(){ netdesign.editVerts.forEach(m=>netdesign.map.removeLayer(m)); netdesign.editVerts=[]; netdesign.editMids.forEach(m=>netdesign.map.removeLayer(m)); netdesign.editMids=[]; }
+function ndBuildEditHandles(){
+  ndClearEdit(); const ll=netdesign.routeLatLngs; if(!ll) return; const n=ll.length;
+  ll.forEach((p,i)=>{ const isEnd=i===0||i===n-1; const m=L.marker(p,{draggable:true,icon:vIcon(isEnd),zIndexOffset:1200});
+    m.on('drag',ev=>{ ll[i]=ev.target.getLatLng(); ndDrawRoute(); ndUpdateMids(); });
+    m.on('dragend',()=>{ netdesign.routed=false; ndUpdateUI(); });
+    m.on('contextmenu',ev=>{ if(ev.originalEvent){ev.originalEvent.preventDefault();ev.originalEvent.stopPropagation();} ndDelVertex(i); });
+    m.addTo(netdesign.map); netdesign.editVerts.push(m);
+  });
+  for(let i=0;i<n-1;i++){ const a=ll[i],b=ll[i+1]; const m=L.marker([(a.lat+b.lat)/2,(a.lng+b.lng)/2],{icon:mIcon(),zIndexOffset:1100});
+    m.on('click',ev=>{ L.DomEvent.stop(ev); ndInsertVertex(i+1); }); m.addTo(netdesign.map); netdesign.editMids.push(m);
+  }
+}
+function ndUpdateMids(){ const ll=netdesign.routeLatLngs; netdesign.editMids.forEach((m,k)=>{ const a=ll[k],b=ll[k+1]; if(a&&b) m.setLatLng([(a.lat+b.lat)/2,(a.lng+b.lng)/2]); }); }
+function ndDelVertex(i){ const ll=netdesign.routeLatLngs; if(ll.length<=2){ toast('A line needs at least two vertices.'); return; } ll.splice(i,1); netdesign.routed=false; ndDrawRoute(); ndBuildEditHandles(); ndUpdateUI(); }
+function ndInsertVertex(index){ const ll=netdesign.routeLatLngs; const a=ll[index-1],b=ll[index]; ll.splice(index,0,L.latLng((a.lat+b.lat)/2,(a.lng+b.lng)/2)); netdesign.routed=false; ndDrawRoute(); ndBuildEditHandles(); ndUpdateUI(); }
+function ndClearRoute(){ if(netdesign.routeLayer){netdesign.map.removeLayer(netdesign.routeLayer);netdesign.routeLayer=null;} netdesign.routeLatLngs=null; netdesign.routed=false; ndClearEdit(); }
+function ndUndo(){ if(!netdesign.waypoints.length) return; netdesign.waypoints.pop(); ndRenderWaypoints(); if(netdesign.waypoints.length>=2) ndRoute(); else { ndClearRoute(); ndUpdateUI(); } }
+function ndClear(){ netdesign.waypoints=[]; if(netdesign.wpGroup) netdesign.wpGroup.clearLayers(); ndClearRoute(); ndUpdateUI(); }
+function ndStatus(msg,err){ const el=document.getElementById('ndStatus'); if(el){ el.textContent=msg||''; el.classList.toggle('err',!!err); } }
+function ndRouteLen(){ const ll=netdesign.routeLatLngs; if(!ll) return 0; let m=0; for(let i=1;i<ll.length;i++)m+=netdesign.map.distance(ll[i-1],ll[i]); return m; }
+function ndUpdateUI(){
+  const has=!!(netdesign.routeLatLngs&&netdesign.routeLatLngs.length>=2);
+  const add=document.getElementById('ndAdd'); if(add) add.disabled=!has;
+  const hint=document.getElementById('ndHint');
+  if(hint) hint.textContent = !netdesign.waypoints.length ? 'Click the map to set the start point.'
+    : (netdesign.waypoints.length<2 ? 'Click the map to add the end point (and any waypoints).'
+    : 'Drag vertices to fine-tune, then pick a network and Add. Click the map to add another waypoint.');
+  if(netdesign.routing) ndStatus('Routing…');
+  else ndStatus(has ? (fmtLen(ndRouteLen())+(netdesign.routed?' along the street network':' (edited)')) : '');
+}
+function ndAddToNetwork(){
+  if(!netdesign.routeLatLngs||netdesign.routeLatLngs.length<2) return;
+  const util=document.getElementById('ndTarget').value;
+  commitLine(netdesign.routeLatLngs.map(ll=>L.latLng(ll.lat,ll.lng)), '', util);
+  const len=fmtLen(ndRouteLen());
+  ndClear(); ndSync();
+  toast('Added a '+len+' line to '+UTILS[util].label+'.');
+}
+
 function setMainView(v){
   mainView=v;
   document.body.classList.toggle('builder-mode',v==='builder');
   document.body.classList.toggle('crossings-mode',v==='crossings');
+  document.body.classList.toggle('netdesign-mode',v==='networkdesign');
   document.querySelectorAll('.mt').forEach(b=>b.classList.toggle('active',b.dataset.mview===v));
   if(v==='builder'){
     document.getElementById('dash').hidden=true;
@@ -2217,6 +2621,10 @@ function setMainView(v){
     document.getElementById('dash').hidden=true;
     if(!crossings.map){ initCrossings(); setTimeout(()=>{ crossings.map.invalidateSize(); syncCrossings(); cxFit(); cxLoadDefaults(); },60); }
     else setTimeout(()=>{ crossings.map.invalidateSize(); syncCrossings(); },60);
+  } else if(v==='networkdesign'){
+    document.getElementById('dash').hidden=true;
+    if(!netdesign.map){ initNetDesign(); setTimeout(()=>{ netdesign.map.invalidateSize(); ndSync(); ndFit(); },60); }
+    else setTimeout(()=>{ netdesign.map.invalidateSize(); ndSync(); },60);
   } else {
     const vt=document.querySelector('.vt.active');
     setView(vt?vt.dataset.view:'map');
@@ -2430,13 +2838,78 @@ function cxCountLine(lineLL,geojson){
   });
   return {count,pts};
 }
+// --- polygon layers: count each polygon once (intersected = boundary crossed OR line vertex inside) ---
+function cxIsPolygonLayer(gj){ return (gj.features||[]).some(f=>f.geometry&&(f.geometry.type==='Polygon'||f.geometry.type==='MultiPolygon')); }
+function cxPointInRing(pt,ring){
+  let inside=false; const x=pt[0],y=pt[1];
+  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+    const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
+    if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/((yj-yi)||1e-12)+xi)) inside=!inside;
+  }
+  return inside;
+}
+function cxRingsInside(pt,rings){ if(!cxPointInRing(pt,rings[0])) return false; for(let k=1;k<rings.length;k++){ if(cxPointInRing(pt,rings[k])) return false; } return true; }
+function cxPointInGeom(pt,g){
+  if(!g) return false;
+  if(g.type==='Polygon') return cxRingsInside(pt,g.coordinates);
+  if(g.type==='MultiPolygon') return g.coordinates.some(poly=>cxRingsInside(pt,poly));
+  return false;
+}
+function cxLinePolyHits(lineLL,geojson){
+  const A=lineLL.map(ll=>[ll.lng,ll.lat]); const hit=new Set(), pts=[];
+  (geojson.features||[]).forEach((f,fi)=>{
+    if(!f.geometry) return; let hitThis=false;
+    cxGeomPaths(f.geometry).forEach(path=>{
+      for(let i=1;i<A.length;i++) for(let j=1;j<path.length;j++){
+        const p=cxSegPoint(A[i-1],A[i],path[j-1],path[j]);
+        if(p){ hitThis=true; pts.push(p); }
+      }
+    });
+    if(!hitThis && A.some(pt=>cxPointInGeom(pt,f.geometry))) hitThis=true;
+    if(hitThis) hit.add(fi);
+  });
+  return {hit,pts};
+}
+function cxFeaturePolys(g){                 // outer rings only, one per polygon
+  if(!g) return [];
+  if(g.type==='Polygon') return [g.coordinates[0]];
+  if(g.type==='MultiPolygon') return g.coordinates.map(p=>p[0]);
+  return [];
+}
+function cxParcelName(f){
+  const p=f.properties||{};
+  const keys=['PARCELID','ParcelID','parcel_id','PARCEL_ID','PIN','APN','APN_TEXT','NAME','Name','OWNER','Owner','SITEADDRESS','SiteAddress','ADDRESS','Address'];
+  for(const k of keys){ if(p[k]!=null && String(p[k]).trim()) return String(p[k]).trim(); }
+  return '';
+}
+function cxAddHitParcels(id){
+  const rec=crossings.arcgisLayers.find(r=>r.id===id); if(!rec||!rec._x||!rec._x.hitIdx) return;
+  const feats=rec.geojson.features||[]; let added=0;
+  rec._x.hitIdx.forEach(fi=>{
+    const f=feats[fi]; if(!f) return;
+    cxFeaturePolys(f.geometry).forEach(ring=>{
+      const latlngs=ring.map(c=>L.latLng(c[1],c[0]));
+      if(latlngs.length>1){ const a=latlngs[0],b=latlngs[latlngs.length-1]; if(a.lat===b.lat&&a.lng===b.lng) latlngs.pop(); }
+      if(latlngs.length>=3){ const pf=commitPolygon(latlngs,'parcel',true); const nm=cxParcelName(f); if(nm) pf.props.name=nm; added++; }
+    });
+  });
+  if(added){ afterChange(); toast(`Added ${added} parcel${added!==1?'s':''} to Asset Manager · Land ▸ Parcels.`); }
+  else toast('No polygon geometry found to add.');
+}
 function computeCrossings(){
   const sel=cxAllLines().filter(l=>crossings.selected.has(l.code));
   crossings.arcgisLayers.forEach(rec=>{
     if(rec.kind!=='features'){ rec._x={na:true,total:0,perLine:{},pts:[]}; return; }
-    let total=0; const perLine={}, pts=[];
-    sel.forEach(l=>{ const r=cxCountLine(l.latlngs,rec.geojson); if(r.count){ perLine[l.code]=r.count; total+=r.count; r.pts.forEach(p=>pts.push(p)); } });
-    rec._x={na:false,total,perLine,pts};
+    if(cxIsPolygonLayer(rec.geojson)){
+      // polygons: each polygon counts once (per line, and once overall for the layer total)
+      const layerHit=new Set(), perLine={}, pts=[];
+      sel.forEach(l=>{ const r=cxLinePolyHits(l.latlngs,rec.geojson); if(r.hit.size){ perLine[l.code]=r.hit.size; r.hit.forEach(fi=>layerHit.add(fi)); r.pts.forEach(p=>pts.push(p)); } });
+      rec._x={na:false,total:layerHit.size,perLine,pts,isPolygon:true,hitIdx:[...layerHit]};
+    } else {
+      let total=0; const perLine={}, pts=[];
+      sel.forEach(l=>{ const r=cxCountLine(l.latlngs,rec.geojson); if(r.count){ perLine[l.code]=r.count; total+=r.count; r.pts.forEach(p=>pts.push(p)); } });
+      rec._x={na:false,total,perLine,pts,isPolygon:false};
+    }
   });
 }
 function syncCrossings(){
@@ -2491,14 +2964,17 @@ function renderCxSummary(){
         ${x.na?'<span class="na">raster · n/a</span>':`<span class="ct${x.total?'':' zero'}">${x.total}</span>`}</div>`;
     if(!x.na){
       let body='';
+      if(x.isPolygon) body+=`<div class="cx-note">Polygons crossed — each counted once${x.perLine&&Object.keys(x.perLine).length?' per line':''}.</div>`;
       if(codesHit.length) codesHit.forEach(code=>{ body+=`<div class="cx-br"><span class="bn">${escapeHtml(nameByCode[code]||code)}</span><span class="bv">${x.perLine[code]}</span></div>`; });
-      else body='<div class="cx-br"><span class="bn">No crossings with selected lines</span><span class="bv">0</span></div>';
+      else body+='<div class="cx-br"><span class="bn">No crossings with selected lines</span><span class="bv">0</span></div>';
+      if(x.isPolygon && x.total) body+=`<button class="btn cx-addparcels" data-id="${rec.id}">Add ${x.total} parcel${x.total!==1?'s':''} to Asset Manager</button>`;
       html+=`<div class="cx-lyr-body">${body}</div>`;
     }
     html+='</div>';
   });
   host.innerHTML=html;
   host.querySelectorAll('.cx-lyr').forEach(el=>{ const id=el.dataset.id; el.querySelector('.cx-lyr-head').onclick=()=>{ crossings.expanded[id]=!crossings.expanded[id]; el.classList.toggle('open',crossings.expanded[id]); }; });
+  host.querySelectorAll('.cx-addparcels').forEach(b=>b.onclick=e=>{ e.stopPropagation(); cxAddHitParcels(b.dataset.id); });
 }
 /* --- crossings ArcGIS loader (reuses the generic ags fetch helpers) --- */
 function cxStatus(msg,isErr){ const el=document.getElementById('cxStatus'); if(!el) return; el.textContent=msg||''; el.classList.toggle('err',!!isErr); el.classList.toggle('show',!!msg); }
@@ -3417,7 +3893,115 @@ async function deployAssetMap(){
   setTimeout(()=>URL.revokeObjectURL(u),60000);
 }
 
+/* ---------- Event History: per-line asset + event log ---------- */
+const DEFAULT_STAGES=['Design','Order','Installation','Testing'];
+function newStage(name){ return {name:name||'Stage',events:[]}; }
+function ehStages(feat){
+  if(!Array.isArray(feat.props.stages)){
+    const legacy=feat.props.eventHistory;
+    if(legacy && legacy.events && legacy.events.length) feat.props.stages=[{name:'General',events:legacy.events}];
+    else feat.props.stages=DEFAULT_STAGES.map(newStage);
+  }
+  feat.props.stages.forEach(s=>{ if(!Array.isArray(s.events)) s.events=[]; });
+  return feat.props.stages;
+}
+// One asset record per line, shared by the stages page and every sub-stage page.
+function ehAsset(feat){
+  if(!feat.props.asset){
+    let src=feat.props.eventHistory;
+    if(!src && Array.isArray(feat.props.stages)) src=feat.props.stages.find(s=>s.assetName||s.projectNo||s.projectDate||s.manufacturer||s.description);
+    src=src||{};
+    feat.props.asset={ assetName:src.assetName||feat.props.name||'', projectNo:src.projectNo||'', projectDate:src.projectDate||'', manufacturer:src.manufacturer||'', description:src.description||'' };
+  }
+  return feat.props.asset;
+}
+function ehAssetTableHTML(a){
+  return `<div class="eh-asset">
+    <div class="eh-cell"><label>Asset Name</label><input id="ehAsset" value="${escapeHtml(a.assetName||'')}"></div>
+    <div class="eh-cell"><label>Project No.</label><input id="ehProjNo" value="${escapeHtml(a.projectNo||'')}"></div>
+    <div class="eh-cell"><label>Project Date</label><input id="ehProjDate" type="date" value="${escapeHtml(a.projectDate||'')}"></div>
+    <div class="eh-cell span2"><label>Manufacturer</label><input id="ehMfr" value="${escapeHtml(a.manufacturer||'')}"></div>
+    <div class="eh-cell"><label>Description</label><input id="ehDesc" value="${escapeHtml(a.description||'')}"></div>
+  </div>`;
+}
+function ehBindAsset(a){
+  const bind=(id,k)=>{ const el=ehModal.querySelector('#'+id); if(el) el.oninput=()=>{ a[k]=el.value; }; };
+  bind('ehAsset','assetName'); bind('ehProjNo','projectNo'); bind('ehProjDate','projectDate'); bind('ehMfr','manufacturer'); bind('ehDesc','description');
+}
+function closeEventHistory(){ if(ehModal){ehModal.remove();ehModal=null;} ehFeat=null; ehStageIdx=-1; if(state.selected) renderAttr(); }
+function openEventHistory(feat){
+  closeEventHistory();
+  ehFeat=feat; ehStageIdx=-1; ehAsset(feat); ehStages(feat);
+  if('eventHistory' in feat.props) delete feat.props.eventHistory;
+  ehModal=document.createElement('div'); ehModal.className='eh-modal';
+  document.body.appendChild(ehModal);
+  ehModal.addEventListener('pointerdown',e=>{ if(e.target===ehModal) closeEventHistory(); });
+  renderStagesView();
+}
+function renderStagesView(){
+  if(!ehModal||!ehFeat) return; ehStageIdx=-1;
+  const feat=ehFeat, stages=ehStages(feat);
+  ehModal.innerHTML=`<div class="eh-dialog">
+    <div class="eh-head"><div class="t">Event History <span class="code">${escapeHtml(feat.code)}</span></div><button class="x" id="ehX">&times;</button></div>
+    <div class="eh-body eh-stages">
+      ${ehAssetTableHTML(ehAsset(feat))}
+      <h4 class="eh-sub">Stages</h4>
+      <div id="ehStageList">${stages.map((s,i)=>`<div class="stage-bar" data-i="${i}"><span class="sb-name">${escapeHtml(s.name||'Stage')}</span><button class="sb-del" title="Remove stage">&times;</button><span class="sb-go">&#9654;</span></div>`).join('')||'<p class="eh-empty">No stages yet — add one below.</p>'}</div>
+      <div class="eh-addwrap"><button class="eh-add" id="ehAddStage">&#65291; Add Stage</button></div>
+    </div></div>`;
+  ehModal.querySelector('#ehX').onclick=closeEventHistory;
+  ehBindAsset(ehAsset(feat));
+  ehModal.querySelector('#ehAddStage').onclick=()=>{ const nm=(prompt('New stage name:')||'').trim(); if(!nm) return; stages.push(newStage(nm)); renderStagesView(); };
+  ehModal.querySelectorAll('.stage-bar').forEach(bar=>{
+    const i=+bar.dataset.i;
+    bar.onclick=e=>{ if(e.target.closest('.sb-del')) return; renderStageEventsView(i); };
+    bar.querySelector('.sb-del').onclick=e=>{ e.stopPropagation(); if(!confirm('Remove stage “'+(stages[i].name||'Stage')+'”? Its events will be deleted.')) return; stages.splice(i,1); renderStagesView(); };
+  });
+}
+function renderStageEventsView(i){
+  if(!ehModal||!ehFeat) return;
+  const stages=ehStages(ehFeat), d=stages[i]; if(!d) return renderStagesView();
+  ehStageIdx=i;
+  ehModal.innerHTML=`<div class="eh-dialog">
+    <div class="eh-head"><div class="t"><button class="eh-back" id="ehBack" title="Back to stages">&#8592;</button><span class="eh-stagename">${escapeHtml(d.name||'Stage')}</span><span class="code">${escapeHtml(ehFeat.code)}</span></div><button class="x" id="ehX">&times;</button></div>
+    <div class="eh-body">
+      ${ehAssetTableHTML(ehAsset(ehFeat))}
+      <h4 class="eh-sub">${escapeHtml(d.name||'Stage')} events</h4>
+      <div id="ehEvents"></div>
+      <div class="eh-addwrap"><button class="eh-add" id="ehAdd">&#65291; Add Event</button></div>
+    </div></div>`;
+  ehModal.querySelector('#ehX').onclick=closeEventHistory;
+  ehModal.querySelector('#ehBack').onclick=renderStagesView;
+  ehBindAsset(ehAsset(ehFeat));
+  ehModal.querySelector('#ehAdd').onclick=()=>{ d.events.push({no:String(d.events.length+1),title:'',date:'',desc:''}); renderStageEvents(); };
+  renderStageEvents();
+}
+function renderStageEvents(){
+  if(!ehModal||ehStageIdx<0) return;
+  const d=ehStages(ehFeat)[ehStageIdx]; if(!d) return;
+  const host=ehModal.querySelector('#ehEvents');
+  host.innerHTML=d.events.map((ev,i)=>`<div class="eh-erow" data-i="${i}">
+      <button class="ev-ctrl" title="Remove event">&#8722;</button>
+      <div class="eh-event">
+        <div class="ev-top">
+          <div class="ev-cell"><label>Event No.</label><input class="ev-no" value="${escapeHtml(ev.no||'')}"></div>
+          <div class="ev-cell"><label>Event Title</label><input class="ev-title" value="${escapeHtml(ev.title||'')}"></div>
+          <div class="ev-cell"><label>Event Date</label><input class="ev-date" type="date" value="${escapeHtml(ev.date||'')}"></div>
+        </div>
+        <div class="ev-desc"><label>Event Description</label><input class="ev-descf" value="${escapeHtml(ev.desc||'')}"></div>
+      </div></div>`).join('') || '<p class="eh-empty">No events yet — use “Add Event” below.</p>';
+  host.querySelectorAll('.eh-erow').forEach(row=>{
+    const i=+row.dataset.i, ev=d.events[i];
+    row.querySelector('.ev-no').oninput=e=>ev.no=e.target.value;
+    row.querySelector('.ev-title').oninput=e=>ev.title=e.target.value;
+    row.querySelector('.ev-date').oninput=e=>ev.date=e.target.value;
+    row.querySelector('.ev-descf').oninput=e=>ev.desc=e.target.value;
+    row.querySelector('.ev-ctrl').onclick=()=>{ d.events.splice(i,1); renderEhEvents(); };
+  });
+}
+
 document.addEventListener('keydown',e=>{
+  if(ehModal){ if(e.key==='Escape'){ if(ehStageIdx>=0) renderStagesView(); else closeEventHistory(); } return; }
   if(fiberModal){ if(e.key==='Escape') closeMatrix(); return; }
   if(fiberTableModal){ if(e.key==='Escape') closeFiberTable(); return; }
   if(traceModal){ if(e.key==='Escape') closeTrace(); return; }
@@ -3520,6 +4104,17 @@ function copyUsersForHtml(){
 }
 function resetUsers(){ if(!confirm('Reset users to the built-in list defined in the HTML?')) return; try{ localStorage.removeItem(USERS_KEY); }catch(e){} renderUsers(); toast('Reset to the built-in users.'); }
 
+/* ---------- app-bar dropdown menus ---------- */
+function closeMenus(){ document.querySelectorAll('.app-bar .menu').forEach(m=>m.hidden=true); }
+function initMenus(){
+  document.querySelectorAll('.app-bar .menu-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{ e.stopPropagation(); const menu=btn.parentElement.querySelector('.menu'); const willOpen=menu.hidden; closeMenus(); menu.hidden=!willOpen; });
+  });
+  document.querySelectorAll('.app-bar .menu-item').forEach(mi=>mi.addEventListener('click',closeMenus));
+  document.addEventListener('click',closeMenus);
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeMenus(); });
+}
+
 window.addEventListener('load',()=>{
   const viewName=new URLSearchParams(location.search).get('view');
   if(viewName){ document.body.style.visibility='hidden'; renderLiveView(viewName); return; }
@@ -3544,6 +4139,7 @@ window.addEventListener('load',()=>{
   document.getElementById('clientDelete').onclick=clientDelete;
   initClients();
   initAuth();
+  initMenus();
 });
 </script>
 </body>
