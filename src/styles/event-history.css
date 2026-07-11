@@ -1,0 +1,39 @@
+.eh-modal{position:fixed;inset:0;z-index:3200;display:flex;align-items:center;justify-content:center;background:rgba(28,32,38,.5);backdrop-filter:blur(2px);padding:24px}
+.eh-dialog{background:#fff;width:min(720px,96vw);max-height:88vh;border-radius:14px;box-shadow:0 30px 80px -22px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+.eh-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.eh-head .t{font-weight:700;font-size:15.5px;display:flex;align-items:center;gap:9px}
+.eh-head .code{font-size:11px;font-weight:600;color:var(--ink-faint);background:var(--panel-2);border:1px solid var(--line-soft);padding:3px 8px;border-radius:6px;font-variant-numeric:tabular-nums}
+.eh-head .x{flex:0 0 auto;width:30px;height:30px;border:1px solid var(--line);background:var(--panel);border-radius:8px;color:var(--ink-dim);font-size:19px;line-height:1;cursor:pointer}
+.eh-head .x:hover{color:var(--ink);background:var(--panel-2)}
+.eh-body{padding:18px;overflow:auto;background:var(--panel-2)}
+.eh-asset{display:grid;grid-template-columns:1fr 1fr 1fr;border:2px solid #24408f;border-radius:10px;overflow:hidden;background:#fff;margin-bottom:16px}
+.eh-sub{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin:2px 0 10px}
+.eh-cell,.ev-cell{border-right:1px solid #24408f;border-bottom:1px solid #24408f;padding:8px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.eh-asset .eh-cell:nth-child(3){border-right:none}
+.eh-asset .eh-cell.span2{grid-column:span 2}
+.eh-asset .eh-cell:nth-child(4),.eh-asset .eh-cell:nth-child(5){border-bottom:none}
+.eh-cell label,.ev-cell label,.ev-desc label{font-size:10.5px;font-weight:700;color:#24408f;text-transform:uppercase;letter-spacing:.4px}
+.eh-cell input,.ev-cell input,.ev-desc input{border:none;outline:none;font-family:var(--ui);font-size:13.5px;color:var(--ink);background:transparent;width:100%;padding:1px 0}
+.eh-erow{display:flex;align-items:flex-start;gap:11px;margin-bottom:12px}
+.eh-erow .ev-ctrl{flex:0 0 auto;width:30px;height:30px;margin-top:8px;border-radius:50%;border:2px solid #24408f;background:#fff;color:#24408f;font-size:20px;font-weight:700;line-height:1;cursor:pointer;display:grid;place-items:center}
+.eh-erow .ev-ctrl:hover{background:#eef2fb}
+.eh-event{flex:1;min-width:0;border:2px solid #24408f;border-radius:10px;overflow:hidden;background:#fff}
+.eh-event .ev-top{display:grid;grid-template-columns:1fr 1fr 1fr}
+.eh-event .ev-cell:nth-child(3){border-right:none}
+.eh-event .ev-desc{padding:8px 12px;display:flex;flex-direction:column;gap:3px}
+.eh-empty{font-size:12.5px;color:var(--ink-faint);text-align:center;padding:6px 0 12px}
+.eh-addwrap{text-align:center;margin-top:2px}
+.eh-add{display:inline-flex;align-items:center;gap:8px;font-family:var(--ui);font-size:14px;font-weight:700;color:#24408f;background:#e8eefc;border:1.5px solid #b9ccf5;border-radius:24px;padding:11px 26px;cursor:pointer}
+.eh-add:hover{background:#dbe6fb}
+.eh-stages #ehStageList{margin-bottom:14px}
+.stage-bar{display:flex;align-items:center;gap:11px;background:#24408f;color:#fff;border-radius:9px;padding:15px 17px;margin-bottom:12px;cursor:pointer;font-weight:800;font-size:17px;letter-spacing:.6px;text-transform:uppercase;transition:background .12s}
+.stage-bar:hover{background:#2d4ea8}
+.stage-bar .sb-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage-bar .sb-del{flex:0 0 auto;width:24px;height:24px;border:none;background:rgba(255,255,255,.16);color:#fff;border-radius:6px;font-size:16px;line-height:1;cursor:pointer;opacity:0;transition:opacity .12s}
+.stage-bar:hover .sb-del{opacity:1}
+.stage-bar .sb-del:hover{background:rgba(255,255,255,.32)}
+.stage-bar .sb-go{flex:0 0 auto;font-size:15px;opacity:.92}
+.eh-back{background:none;border:none;color:var(--ink-dim);font-size:19px;line-height:1;cursor:pointer;padding:0 3px 0 0;font-weight:700}
+.eh-back:hover{color:var(--ink)}
+.eh-stagename{text-transform:uppercase;letter-spacing:.5px}
+.btn.eh-btn{width:100%;justify-content:center;margin-top:4px;font-size:12.5px}

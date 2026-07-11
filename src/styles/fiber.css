@@ -1,0 +1,69 @@
+.fiber-modal{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(28,32,38,.46);backdrop-filter:blur(2px)}
+.fiber-dialog{background:#fff;width:min(640px,95vw);max-height:88vh;border-radius:16px;box-shadow:0 30px 80px -22px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+.fiber-dlg-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.fiber-dlg-head .t{font-weight:700;font-size:15.5px}
+.fiber-dlg-head .s{font-size:12px;color:var(--ink-dim);margin-top:3px;line-height:1.4}
+.fiber-dlg-head .x{flex:0 0 auto;width:30px;height:30px;border:1px solid var(--line);background:var(--panel);border-radius:8px;color:var(--ink-dim);font-size:19px;line-height:1;cursor:pointer}
+.fiber-dlg-head .x:hover{color:var(--ink);background:var(--panel-2)}
+.fiber-stage-wrap{flex:1;overflow:auto;padding:16px 20px;background:var(--panel-2)}
+.fiber-stage{position:relative;display:flex;justify-content:space-between;gap:90px;min-height:100%}
+.fiber-col{display:flex;flex-direction:column;gap:4px;position:relative;z-index:2;min-width:140px}
+.fiber-col.right{align-items:stretch}
+.col-h{font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px}
+.fiber-col.right .col-h{text-align:right}
+.tube-h{font-size:10px;font-weight:700;color:var(--ink-faint);margin:8px 0 2px}
+.branch-group{margin-bottom:12px}
+.branch-group .bg-h{font-size:11px;font-weight:700;color:var(--ink-dim);margin-bottom:4px;text-align:right}
+.branch-group .bg-sub{font-weight:500;color:var(--ink-faint)}
+.fib{display:flex;align-items:center;gap:7px;padding:3px 7px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:grab;user-select:none;touch-action:none;transition:border-color .1s,box-shadow .1s}
+.fib:hover{border-color:var(--telecom)}
+.fib:active{cursor:grabbing}
+.fib.on{border-color:var(--telecom);box-shadow:0 0 0 2px color-mix(in srgb,var(--telecom) 22%,transparent)}
+.fib.armed{border-color:var(--telecom);background:color-mix(in srgb,var(--telecom) 12%,#fff);box-shadow:0 0 0 3px color-mix(in srgb,var(--telecom) 30%,transparent)}
+.fiber-col.right .fib{justify-content:flex-start}
+.fib-dot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.22);flex:0 0 14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.fib-no{font-size:11px;font-weight:700;width:24px;text-align:center;font-variant-numeric:tabular-nums;color:var(--ink)}
+.fib-nm{font-size:10.5px;color:var(--ink-dim);flex:1}
+.fiber-col.right .fib-nm{text-align:right}
+.fiber-wires{position:absolute;top:0;left:0;z-index:1;overflow:visible;pointer-events:none}
+.fiber-wires path.wire{pointer-events:stroke;cursor:pointer}
+.fiber-wires path.wire:hover{stroke-width:4}
+.fiber-dlg-foot{display:flex;gap:8px;padding:13px 18px;border-top:1px solid var(--line);align-items:center}
+.fiber-dlg-foot .sp{flex:1;font-size:12px;color:var(--ink-dim)}
+.fiber-dlg-foot .sp b{color:var(--ink);font-weight:700}
+
+/* fiber table */
+.ft-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line-soft);border-radius:9px;margin-bottom:5px;cursor:pointer;background:#fff;transition:.1s}
+.ft-row:hover{border-color:var(--telecom);background:color-mix(in srgb,var(--telecom) 6%,#fff)}
+.ft-row .ft-no{font-size:12.5px;font-weight:700;width:26px;text-align:center;font-variant-numeric:tabular-nums}
+.ft-row .ft-nm{font-size:12.5px;color:var(--ink-dim);flex:1}
+.ft-row .ft-sig{font-size:10.5px;font-weight:600;color:var(--ink-faint)}
+.ft-row .ft-sig.on{color:#16a34a}
+.ft-row .ft-go{font-size:11.5px;font-weight:700;color:var(--telecom)}
+
+/* trace panel (bottom-docked, non-blocking so map highlight shows) */
+.trace-panel{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2500;width:min(820px,94vw);background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 22px 60px -20px rgba(0,0,0,.5);overflow:hidden}
+.trace-head{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line);font-size:13.5px}
+.trace-head b{font-weight:700}
+.trace-head .trace-meta{font-size:12px;color:var(--ink-dim)}
+.trace-head .x{margin-left:auto;width:28px;height:28px;border:1px solid var(--line);background:var(--panel);border-radius:8px;color:var(--ink-dim);font-size:18px;line-height:1;cursor:pointer}
+.trace-head .x:hover{color:var(--ink);background:var(--panel-2)}
+.trace-chain{display:flex;align-items:stretch;gap:0;padding:16px;overflow-x:auto}
+.trace-empty{font-size:12.5px;color:var(--ink-faint);padding:6px 2px}
+.trace-card{flex:0 0 auto;min-width:150px;border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--panel-2)}
+.trace-card.start{border-color:var(--telecom);box-shadow:0 0 0 2px color-mix(in srgb,var(--telecom) 22%,transparent)}
+.trace-card.flow-start{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 24%,transparent)}
+.flow-col{display:flex;flex-direction:column;gap:8px;justify-content:center;flex:0 0 auto}
+.flow-link{flex:0 0 auto;align-self:center;display:flex;align-items:center;justify-content:center;padding:0 6px;min-width:34px}
+.flow-link .fl-arrow{color:var(--c,var(--ink-faint));font-size:20px;font-weight:700;line-height:1}
+.trace-card .tc-strand{height:5px;border-radius:3px;margin:-2px -4px 9px;border:1px solid rgba(0,0,0,.12)}
+.trace-card .tc-name{font-weight:700;font-size:13.5px;margin-bottom:6px}
+.trace-card .tc-fiber{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink);margin-bottom:4px}
+.trace-card .tc-tube{font-size:10.5px;color:var(--ink-faint);margin-bottom:7px;font-variant-numeric:tabular-nums}
+.trace-card .tc-place{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px}
+.trace-card .tc-place.ae{color:#0b6b58;background:#dff5ef}
+.trace-card .tc-place.ug{color:#7a4a1e;background:#f3e8db}
+.trace-link{flex:0 0 auto;align-self:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0 8px;min-width:92px;position:relative}
+.trace-link::before{content:"";position:absolute;left:0;right:0;top:50%;height:3px;background:var(--c,var(--telecom));opacity:.65;transform:translateY(-50%)}
+.trace-link .tl-fibers{position:relative;background:var(--c,var(--telecom));color:#fff;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.trace-link .tl-label{position:relative;background:#fff;border:1px solid var(--line);border-radius:20px;padding:1px 8px;font-size:9.5px;font-weight:700;color:var(--ink-dim);white-space:nowrap}

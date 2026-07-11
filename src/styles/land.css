@@ -1,0 +1,24 @@
+/* Land group flyout: Sites / Parcels */
+/* hovered tabs get transform:translateY(-1px), which makes each a stacking context;
+   the map has z-index:1, so lift the hovered Land tab's whole context above it */
+.land-group:hover{z-index:2600}
+.land-group .land-flyout{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);display:none;flex-direction:column;gap:3px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:2000;min-width:150px}
+.land-group:hover .land-flyout{display:flex}
+.land-flyout::before{content:"";position:absolute;left:-12px;top:0;width:12px;height:100%}
+.land-flyout::after{content:"";position:absolute;left:-6px;top:50%;transform:translateY(-50%) rotate(45deg);width:10px;height:10px;background:var(--panel);border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
+.land-sub{--u:#3f7f4f;display:flex;align-items:center;gap:9px;padding:8px 11px;border:none;background:none;border-radius:9px;cursor:pointer;color:var(--ink-dim);font-size:13px;font-weight:600;text-align:left;width:100%}
+.land-sub:hover{background:color-mix(in srgb,var(--u) 10%,#fff);color:var(--u)}
+.land-sub.on{background:color-mix(in srgb,var(--u) 14%,#fff);color:var(--u)}
+.land-sub .lf-glyph{width:22px;height:22px;display:inline-flex;flex:0 0 auto}
+.land-sub .lf-glyph svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.land-sub .lf-nm{flex:1}
+.land-sub .sub-ct{font-size:11px;opacity:.7;font-variant-numeric:tabular-nums}
+
+.sym-site{width:15px;height:12px;border:2px dashed #2f7d4f;background:rgba(47,125,79,.08);border-radius:2px}
+.sym-lease{width:15px;height:12px;border:2px solid #2f7d4f;background:rgba(74,160,111,.28);border-radius:2px}
+.sym-building{width:13px;height:11px;border:1.5px solid #8a5a2b;background:rgba(192,131,65,.7);border-radius:1px}
+.sym-parcel{width:15px;height:12px;border:2px solid #4f6d7a;background:rgba(79,109,122,.22);border-radius:2px}
+
+.land-ctx{position:absolute;top:62px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;gap:9px;padding:7px 13px;background:var(--panel);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);font-size:13px}
+.land-ctx .lc-label{font-weight:700;color:#2f7d4f}
+.land-ctx select{padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font-size:13px;max-width:220px}
