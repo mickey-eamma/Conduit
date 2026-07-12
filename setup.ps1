@@ -11,10 +11,10 @@ function Refresh-Path {
     $env:Path = "$machine;$user"
 }
 
-Set-Location -Path $PSScriptRoot
+Set-Location -Path (Join-Path $PSScriptRoot 'frontend')
 
 Write-Host "Conduit Setup" -ForegroundColor Green
-Write-Host "This will install Node.js (if needed) and the app's dependencies."
+Write-Host "This will install Node.js (if needed) and the frontend's dependencies."
 
 $node = Get-Command node -ErrorAction SilentlyContinue
 if ($node) {

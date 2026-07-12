@@ -1,5 +1,6 @@
 $ErrorActionPreference = 'Stop'
-Set-Location -Path $PSScriptRoot
+$frontendDir = Join-Path $PSScriptRoot 'frontend'
+Set-Location -Path $frontendDir
 
 $node = Get-Command node -ErrorAction SilentlyContinue
 if (-not $node) {
@@ -8,7 +9,7 @@ if (-not $node) {
     exit 1
 }
 
-if (-not (Test-Path (Join-Path $PSScriptRoot 'node_modules'))) {
+if (-not (Test-Path (Join-Path $frontendDir 'node_modules'))) {
     Write-Host "Dependencies are not installed yet. Installing now..." -ForegroundColor Yellow
     npm install
     if ($LASTEXITCODE -ne 0) {
